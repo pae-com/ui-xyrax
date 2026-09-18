@@ -1,10 +1,10 @@
 --[[
-	ReaperX UI Library (WindUI Enhanced + Button & Tab Icons/Logos)
-	- Supports Optional Icons/Logos on Buttons, Tabs, and Sections
-	- Built-in Lucide Icon Resolver (by string name or asset ID)
-	- Toast Notifications (Window:Notify)
+	ReaperX UI Library (Official WindUI Icons Engine Integration)
+	- Powered by: Footagesus/WindUI & Footagesus/Icons (MIT License)
+	- Supports 1,500+ WindUI Lucide Icons by name string
+	- Optional Icons/Logos on Buttons, Tabs, and Sections
 	- Modern Crimson Ambient Dot Close Button (No 'X')
-	- Spring/Exponential Transitions & Resizing
+	- Spring/Exponential Transitions, Toast Notifications, & Resizing
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -33,10 +33,15 @@ local Theme = {
 	CloseDot    = Color3.fromRGB(80, 25, 25),
 }
 
--- Built-in Lucide Icons Map
-local LucideMap = {
+-- ====================== WINDUI ICON SYSTEM ======================
+local WindUIIcons = {}
+pcall(function()
+	local raw = game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/refs/heads/main/lucide/dist/Icons.lua")
+	WindUIIcons = loadstring(raw)()
+end)
+
+local FallbackIcons = {
 	["swords"]    = "rbxassetid://10747377716",
-	["sword"]     = "rbxassetid://10747377716",
 	["skull"]     = "rbxassetid://10747384022",
 	["cart"]      = "rbxassetid://10747381958",
 	["globe"]     = "rbxassetid://10747378330",
@@ -46,15 +51,10 @@ local LucideMap = {
 	["star"]      = "rbxassetid://10747383049",
 	["play"]      = "rbxassetid://10747381395",
 	["check"]     = "rbxassetid://10747376789",
-	["user"]      = "rbxassetid://10747383281",
-	["server"]    = "rbxassetid://10747381285",
 	["zap"]       = "rbxassetid://10747384501",
 	["flame"]     = "rbxassetid://10747378135",
-	["info"]      = "rbxassetid://10747379567",
 	["copy"]      = "rbxassetid://10747377488",
 	["trash"]     = "rbxassetid://10747383471",
-	["lock"]      = "rbxassetid://10747380721",
-	["unlock"]    = "rbxassetid://10747383780",
 }
 
 function UIModule:GetIcon(iconName)
@@ -67,8 +67,14 @@ function UIModule:GetIcon(iconName)
 	if num then
 		return "rbxthumb://type=Asset&id=" .. num .. "&w=150&h=150"
 	end
-	local cleanName = string.lower(str):gsub("%s+", "")
-	return LucideMap[cleanName] or LucideMap["star"]
+	local cleanName = string.lower(str):gsub("%s+", "-")
+	
+	-- 1. Check WindUI Lucide Database (1,500+ icons)
+	if WindUIIcons and WindUIIcons[cleanName] then
+		return WindUIIcons[cleanName]
+	end
+	-- 2. Check local fallback
+	return FallbackIcons[cleanName] or FallbackIcons[cleanName:gsub("-", "")] or nil
 end
 
 local function Create(class, props)
@@ -248,7 +254,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Ambient Crimson Dot Close Button
+	-- Ambient Crimson Dot (Close Button - No 'X')
 	local closeBtn = Create("TextButton", {
 		Size = UDim2.new(0, 24, 0, 24),
 		Position = UDim2.new(1, -14, 0.5, 0),
@@ -487,7 +493,7 @@ function UIModule:Notify(config)
 	end)
 end
 
--- ====================== TABS (OPTIONAL ICON / LOGO SUPPORT) ======================
+-- ====================== TABS (WINDUI ICONS SUPPORT) ======================
 function UIModule:CreateTabLabel(text)
 	Create("TextLabel", {
 		Size = UDim2.new(1, 0, 0, 22),
@@ -692,7 +698,7 @@ function UIModule:CreateSection(tab, config)
 	return section
 end
 
--- ====================== BUTTON (OPTIONAL ICON / LOGO SUPPORT) ======================
+-- ====================== BUTTONS (WINDUI ICONS SUPPORT) ======================
 function UIModule:CreateButton(section, config)
 	config = config or {}
 	local resolvedIcon = self:GetIcon(config.Icon or config.Logo)
@@ -752,7 +758,7 @@ function UIModule:CreateButton(section, config)
 	return btn
 end
 
--- ====================== TOGGLES & SLIDERS & CHECKBOXES ======================
+-- ====================== TOGGLE, SLIDER & CHECKBOX ======================
 function UIModule:CreateToggle(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Toggle"
@@ -983,7 +989,7 @@ function UIModule:CreateCheckbox(section, config)
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundTransparency = 1,
-		Image = LucideMap["check"],
+		Image = self:GetIcon("check") or "rbxassetid://10747376789",
 		ImageColor3 = Color3.fromRGB(255, 255, 255),
 		ImageTransparency = default and 0 or 1,
 		Parent = box,
@@ -1146,7 +1152,7 @@ function UIModule:OpenMultiSelectWindow(config)
 		local box = Create("Frame", {
 			Size = UDim2.new(0, 18, 0, 18),
 			Position = UDim2.new(0, 10, 0.5, 0),
-			AnchorPoint = Vector2.new(0.5, 0.5),
+			AnchorPoint = Vector2.new(0, 0.5),
 			BackgroundColor3 = currentSelected[optName] and Theme.Accent or Theme.ToggleOff,
 			BorderSizePixel = 0,
 			ZIndex = 54,
@@ -1161,7 +1167,7 @@ function UIModule:OpenMultiSelectWindow(config)
 			Position = UDim2.new(0.5, 0, 0.5, 0),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundTransparency = 1,
-			Image = LucideMap["check"],
+			Image = self:GetIcon("check") or "rbxassetid://10747376789",
 			ImageColor3 = Color3.fromRGB(255, 255, 255),
 			ImageTransparency = currentSelected[optName] and 0 or 1,
 			ZIndex = 55,
