@@ -1,9 +1,10 @@
 --[[
-	ReaperX Style UI Library
-	- Close Button: Modern Crimson Ambient Dot (No 'X')
-	- Sidebar Tabs: Pure Text (No icons) + Smooth Expand & Slide-in Click Animation
-	- Bottom-Right: Corner Drag Resizer (◢)
-	- Settings: Multi-Select Modal Window (No dropdown / No icons)
+	ReaperX UI Library (WindUI Enhanced Edition)
+	- Inspired by: Footagesus/WindUI (MIT License)
+	- Built-in Lucide Icon Resolver (by string name)
+	- WindUI Smooth Exponential / Spring Transitions
+	- Floating Toast Notification System (Window:Notify)
+	- Modal Popups, Corner Resizing, Clean Ambient Close Dot
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -14,27 +15,50 @@ local UIModule = {}
 UIModule.__index = UIModule
 
 local Theme = {
-	Background  = Color3.fromRGB(15, 15, 17),
-	Sidebar     = Color3.fromRGB(20, 20, 23),
-	Content     = Color3.fromRGB(15, 15, 17),
-	Section     = Color3.fromRGB(24, 24, 28),
+	Background  = Color3.fromRGB(14, 14, 17),
+	Sidebar     = Color3.fromRGB(19, 19, 23),
+	Content     = Color3.fromRGB(14, 14, 17),
+	Section     = Color3.fromRGB(22, 22, 27),
 	ModalBg     = Color3.fromRGB(18, 18, 22),
-	Border      = Color3.fromRGB(42, 42, 48),
+	Border      = Color3.fromRGB(38, 38, 44),
 
 	Text        = Color3.fromRGB(255, 255, 255),
-	TextDim     = Color3.fromRGB(155, 155, 165),
+	TextDim     = Color3.fromRGB(150, 150, 160),
 
 	Accent      = Color3.fromRGB(255, 50, 50),
 	AccentDark  = Color3.fromRGB(180, 20, 20),
 
-	ToggleOff   = Color3.fromRGB(45, 45, 50),
-	SliderTrack = Color3.fromRGB(35, 35, 40),
+	ToggleOff   = Color3.fromRGB(42, 42, 48),
+	SliderTrack = Color3.fromRGB(32, 32, 38),
 	CloseDot    = Color3.fromRGB(80, 25, 25),
 }
 
-UIModule.Icons = {
-	Check = "rbxassetid://10747376789",
+-- Built-in Lucide Icons Map (Roblox Official Public Assets)
+local LucideMap = {
+	["swords"]    = "rbxassetid://10747377716",
+	["sword"]     = "rbxassetid://10747377716",
+	["skull"]     = "rbxassetid://10747384022",
+	["cart"]      = "rbxassetid://10747381958",
+	["globe"]     = "rbxassetid://10747378330",
+	["settings"]  = "rbxassetid://10747383136",
+	["shield"]    = "rbxassetid://10747382404",
+	["bell"]      = "rbxassetid://10747377045",
+	["star"]      = "rbxassetid://10747383049",
+	["play"]      = "rbxassetid://10747381395",
+	["check"]     = "rbxassetid://10747376789",
+	["user"]      = "rbxassetid://10747383281",
+	["server"]    = "rbxassetid://10747381285",
+	["zap"]       = "rbxassetid://10747384501",
+	["flame"]     = "rbxassetid://10747378135",
+	["info"]      = "rbxassetid://10747379567",
 }
+
+function UIModule:GetIcon(iconName)
+	if not iconName or iconName == "" then return nil end
+	if string.find(tostring(iconName), "rbxassetid://") then return iconName end
+	local cleanName = string.lower(tostring(iconName)):gsub("%s+", "")
+	return LucideMap[cleanName] or LucideMap["star"]
+end
 
 local function Create(class, props)
 	local inst = Instance.new(class)
@@ -45,8 +69,9 @@ local function Create(class, props)
 	return inst
 end
 
-local function Tween(obj, props, time)
-	local t = TweenService:Create(obj, TweenInfo.new(time or 0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), props)
+-- WindUI Exponential Transition Helper
+local function TweenExp(obj, props, duration)
+	local t = TweenService:Create(obj, TweenInfo.new(duration or 0.25, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), props)
 	t:Play()
 	return t
 end
@@ -83,6 +108,23 @@ function UIModule.new(config)
 	})
 	self.Gui = gui
 
+	-- Notification Toast Container (WindUI Style)
+	local notifContainer = Create("Frame", {
+		Name = "Notifications",
+		Size = UDim2.new(0, 300, 1, -20),
+		Position = UDim2.new(1, -310, 0, 10),
+		BackgroundTransparency = 1,
+		ZIndex = 100,
+		Parent = gui,
+	})
+	Create("UIListLayout", {
+		VerticalAlignment = Enum.VerticalAlignment.Bottom,
+		Padding = UDim.new(0, 8),
+		Parent = notifContainer,
+	})
+	self.NotifContainer = notifContainer
+
+	-- Main Window Frame
 	local main = Create("Frame", {
 		Name = "Main",
 		Size = self.Size,
@@ -99,13 +141,14 @@ function UIModule.new(config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = main })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = main })
 
+	-- Toggle GUI Keybind
 	UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == (config.ToggleKey or Enum.KeyCode.RightControl) then
 			main.Visible = not main.Visible
 		end
 	end)
 
-	-- ========== TITLE BAR ==========
+	-- Title Bar
 	local titleBar = Create("Frame", {
 		Name = "TitleBar",
 		Size = UDim2.new(1, 0, 0, 52),
@@ -114,7 +157,6 @@ function UIModule.new(config)
 		Active = true,
 		Parent = main,
 	})
-
 	Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		Position = UDim2.new(0, 0, 1, -1),
@@ -123,7 +165,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Monogram Badge [R]
+	-- Emblem [R]
 	local emblem = Create("Frame", {
 		Size = UDim2.new(0, 30, 0, 30),
 		Position = UDim2.new(0, 14, 0.5, 0),
@@ -197,9 +239,8 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- ========== MODERN CLOSE BUTTON (Crimson Ambient Dot - No 'X') ==========
+	-- Ambient Crimson Dot (Close Button - No 'X')
 	local closeBtn = Create("TextButton", {
-		Name = "CloseDotButton",
 		Size = UDim2.new(0, 24, 0, 24),
 		Position = UDim2.new(1, -14, 0.5, 0),
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -221,15 +262,15 @@ function UIModule.new(config)
 	local dotStroke = Create("UIStroke", { Color = Theme.Accent, Thickness = 1, Transparency = 0.4, Parent = closeDot })
 
 	closeBtn.MouseEnter:Connect(function()
-		Tween(closeDot, { Size = UDim2.new(0, 14, 0, 14), BackgroundColor3 = Theme.Accent }, 0.15)
-		Tween(dotStroke, { Transparency = 0 }, 0.15)
+		TweenExp(closeDot, { Size = UDim2.new(0, 14, 0, 14), BackgroundColor3 = Theme.Accent }, 0.2)
+		TweenExp(dotStroke, { Transparency = 0 }, 0.2)
 	end)
 	closeBtn.MouseLeave:Connect(function()
-		Tween(closeDot, { Size = UDim2.new(0, 12, 0, 12), BackgroundColor3 = Theme.CloseDot }, 0.15)
-		Tween(dotStroke, { Transparency = 0.4 }, 0.15)
+		TweenExp(closeDot, { Size = UDim2.new(0, 12, 0, 12), BackgroundColor3 = Theme.CloseDot }, 0.2)
+		TweenExp(dotStroke, { Transparency = 0.4 }, 0.2)
 	end)
 	closeBtn.MouseButton1Click:Connect(function()
-		Tween(closeDot, { Size = UDim2.new(0, 6, 0, 6) }, 0.08).Completed:Connect(function()
+		TweenExp(closeDot, { Size = UDim2.new(0, 4, 0, 4) }, 0.1).Completed:Connect(function()
 			gui:Destroy()
 		end)
 	end)
@@ -243,7 +284,6 @@ function UIModule.new(config)
 		BorderSizePixel = 0,
 		Parent = main,
 	})
-
 	Create("Frame", {
 		Size = UDim2.new(0, 1, 1, 0),
 		Position = UDim2.new(1, -1, 0, 0),
@@ -264,18 +304,8 @@ function UIModule.new(config)
 	})
 	self.SidebarList = sidebarList
 
-	Create("UIListLayout", {
-		Padding = UDim.new(0, 4),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = sidebarList,
-	})
-	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 10),
-		PaddingBottom = UDim.new(0, 10),
-		PaddingLeft = UDim.new(0, 10),
-		PaddingRight = UDim.new(0, 10),
-		Parent = sidebarList,
-	})
+	Create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = sidebarList })
+	Create("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = sidebarList })
 
 	-- Content
 	local content = Create("Frame", {
@@ -300,18 +330,8 @@ function UIModule.new(config)
 	})
 	self.ContentScroll = contentScroll
 
-	Create("UIListLayout", {
-		Padding = UDim.new(0, 14),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = contentScroll,
-	})
-	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 16),
-		PaddingBottom = UDim.new(0, 24),
-		PaddingLeft = UDim.new(0, 18),
-		PaddingRight = UDim.new(0, 18),
-		Parent = contentScroll,
-	})
+	Create("UIListLayout", { Padding = UDim.new(0, 14), SortOrder = Enum.SortOrder.LayoutOrder, Parent = contentScroll })
+	Create("UIPadding", { PaddingTop = UDim.new(0, 16), PaddingBottom = UDim.new(0, 24), PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18), Parent = contentScroll })
 
 	-- Window Dragging Logic
 	local dragging, dragInput, dragStart, startPos
@@ -320,7 +340,6 @@ function UIModule.new(config)
 			dragging = true
 			dragStart = input.Position
 			startPos = main.Position
-
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then dragging = false end
 			end)
@@ -336,12 +355,7 @@ function UIModule.new(config)
 	UserInputService.InputChanged:Connect(function(input)
 		if input == dragInput and dragging then
 			local delta = input.Position - dragStart
-			main.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
+			main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
 
@@ -366,9 +380,6 @@ function UIModule.new(config)
 		Active = true,
 		Parent = main,
 	})
-
-	resizeHandle.MouseEnter:Connect(function() Tween(resizeHandle, { TextColor3 = Theme.Accent }) end)
-	resizeHandle.MouseLeave:Connect(function() Tween(resizeHandle, { TextColor3 = Theme.TextDim }) end)
 
 	local resizing = false
 	local rStartPos, rStartSize, rCenterPos
@@ -407,7 +418,69 @@ function UIModule.new(config)
 	return self
 end
 
--- ====================== TABS (NO ICONS + CLICK ANIMATIONS) ======================
+-- ====================== FLOATING TOAST NOTIFICATION (WINDUI STYLE) ======================
+function UIModule:Notify(config)
+	config = config or {}
+	local title = config.Title or "Notification"
+	local content = config.Content or ""
+	local duration = config.Duration or 3
+
+	local toast = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 60),
+		Position = UDim2.new(1, 40, 0, 0), -- Slide in from right
+		BackgroundColor3 = Theme.ModalBg,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Parent = self.NotifContainer,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = toast })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = toast })
+
+	Create("TextLabel", {
+		Size = UDim2.new(1, -20, 0, 18),
+		Position = UDim2.new(0, 12, 0, 10),
+		BackgroundTransparency = 1,
+		Text = title,
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = toast,
+	})
+
+	Create("TextLabel", {
+		Size = UDim2.new(1, -20, 0, 16),
+		Position = UDim2.new(0, 12, 0, 30),
+		BackgroundTransparency = 1,
+		Text = content,
+		TextColor3 = Theme.TextDim,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = toast,
+	})
+
+	-- Timer Bar
+	local timerBar = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 2),
+		Position = UDim2.new(0, 0, 1, -2),
+		BackgroundColor3 = Theme.Accent,
+		BorderSizePixel = 0,
+		Parent = toast,
+	})
+
+	-- Slide In
+	TweenExp(toast, { Position = UDim2.new(0, 0, 0, 0) }, 0.3)
+	TweenService:Create(timerBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
+
+	task.delay(duration, function()
+		TweenExp(toast, { Position = UDim2.new(1, 40, 0, 0) }, 0.25).Completed:Connect(function()
+			toast:Destroy()
+		end)
+	end)
+end
+
+-- ====================== TABS (NO ICONS + WINDUI CLICK ANIMATION) ======================
 function UIModule:CreateTabLabel(text)
 	Create("TextLabel", {
 		Size = UDim2.new(1, 0, 0, 22),
@@ -437,7 +510,7 @@ function UIModule:CreateTab(name)
 	local btnGradient = ApplyGradient(btn, Theme.Accent, Theme.AccentDark)
 	btnGradient.Enabled = false
 
-	-- Left Active Indicator Bar (Animates height on click)
+	-- Indicator Line (Animates Height on Click)
 	local indicator = Create("Frame", {
 		Size = UDim2.new(0, 3, 0, 0),
 		Position = UDim2.new(0, 0, 0.5, 0),
@@ -448,7 +521,6 @@ function UIModule:CreateTab(name)
 	})
 	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = indicator })
 
-	-- Clean Text Label (No Icon)
 	local nameLabel = Create("TextLabel", {
 		Size = UDim2.new(1, -24, 1, 0),
 		Position = UDim2.new(0, 14, 0, 0),
@@ -468,39 +540,34 @@ function UIModule:CreateTab(name)
 		Visible = false,
 		Parent = self.ContentScroll,
 	})
-	Create("UIListLayout", {
-		Padding = UDim.new(0, 12),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = container,
-	})
+	Create("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder, Parent = container })
+
 	tab.Container = container
 	tab.Button = btn
 	tab.Gradient = btnGradient
 	tab.NameLabel = nameLabel
 	tab.Indicator = indicator
 
-	-- Interactive Click Animation
 	btn.MouseButton1Click:Connect(function()
-		-- Tactile bounce animation on tab button
-		Tween(btn, { Size = UDim2.new(1, -4, 0, 34) }, 0.05).Completed:Connect(function()
-			Tween(btn, { Size = UDim2.new(1, 0, 0, 36) }, 0.1)
+		TweenExp(btn, { Size = UDim2.new(1, -4, 0, 34) }, 0.08).Completed:Connect(function()
+			TweenExp(btn, { Size = UDim2.new(1, 0, 0, 36) }, 0.12)
 		end)
 		self:SelectTab(tab)
 	end)
 
 	btn.MouseEnter:Connect(function()
 		if self.CurrentTab ~= tab then
-			Tween(btn, { BackgroundTransparency = 0.92 })
-			Tween(nameLabel, { TextColor3 = Theme.Text })
-			Tween(indicator, { Size = UDim2.new(0, 3, 0, 12) }, 0.15)
+			TweenExp(btn, { BackgroundTransparency = 0.92 }, 0.15)
+			TweenExp(nameLabel, { TextColor3 = Theme.Text }, 0.15)
+			TweenExp(indicator, { Size = UDim2.new(0, 3, 0, 12) }, 0.15)
 		end
 	end)
 
 	btn.MouseLeave:Connect(function()
 		if self.CurrentTab ~= tab then
-			Tween(btn, { BackgroundTransparency = 1 })
-			Tween(nameLabel, { TextColor3 = Theme.TextDim })
-			Tween(indicator, { Size = UDim2.new(0, 3, 0, 0) }, 0.15)
+			TweenExp(btn, { BackgroundTransparency = 1 }, 0.15)
+			TweenExp(nameLabel, { TextColor3 = Theme.TextDim }, 0.15)
+			TweenExp(indicator, { Size = UDim2.new(0, 3, 0, 0) }, 0.15)
 		end
 	end)
 
@@ -516,19 +583,18 @@ function UIModule:SelectTab(tab)
 		t.Button.BackgroundTransparency = 1
 		t.NameLabel.TextColor3 = Theme.TextDim
 		t.NameLabel.Font = Enum.Font.GothamMedium
-		Tween(t.Indicator, { Size = UDim2.new(0, 3, 0, 0) }, 0.15)
+		TweenExp(t.Indicator, { Size = UDim2.new(0, 3, 0, 0) }, 0.15)
 	end
 
 	tab.Gradient.Enabled = true
 	tab.Button.BackgroundTransparency = 0.85
 	tab.NameLabel.TextColor3 = Theme.Text
 	tab.NameLabel.Font = Enum.Font.GothamBold
-	Tween(tab.Indicator, { Size = UDim2.new(0, 3, 0, 22) }, 0.2)
+	TweenExp(tab.Indicator, { Size = UDim2.new(0, 3, 0, 22) }, 0.2)
 
-	-- Smooth Slide-in Transition on Content
-	tab.Container.Position = UDim2.new(0, 0, 0, 8)
+	tab.Container.Position = UDim2.new(0, 0, 0, 10)
 	tab.Container.Visible = true
-	Tween(tab.Container, { Position = UDim2.new(0, 0, 0, 0) }, 0.2)
+	TweenExp(tab.Container, { Position = UDim2.new(0, 0, 0, 0) }, 0.25)
 
 	self.CurrentTab = tab
 end
@@ -545,18 +611,8 @@ function UIModule:CreateSection(tab, config)
 	})
 	Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = section })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = section })
-	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 12),
-		PaddingBottom = UDim.new(0, 14),
-		PaddingLeft = UDim.new(0, 14),
-		PaddingRight = UDim.new(0, 14),
-		Parent = section,
-	})
-	Create("UIListLayout", {
-		Padding = UDim.new(0, 10),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = section,
-	})
+	Create("UIPadding", { PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 14), PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14), Parent = section })
+	Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = section })
 
 	if config.Title then
 		local header = Create("Frame", {
@@ -564,9 +620,27 @@ function UIModule:CreateSection(tab, config)
 			BackgroundTransparency = 1,
 			Parent = section,
 		})
+
+		-- Optional Lucide Icon Support in Section Header
+		local textOffset = 0
+		if config.Icon then
+			local resolvedIcon = self:GetIcon(config.Icon)
+			if resolvedIcon then
+				Create("ImageLabel", {
+					Size = UDim2.new(0, 18, 0, 18),
+					Position = UDim2.new(0, 0, 0, 2),
+					BackgroundTransparency = 1,
+					Image = resolvedIcon,
+					ImageColor3 = Theme.Accent,
+					Parent = header,
+				})
+				textOffset = 24
+			end
+		end
+
 		Create("TextLabel", {
-			Size = UDim2.new(1, 0, 0, 18),
-			Position = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(1, -textOffset, 0, 18),
+			Position = UDim2.new(0, textOffset, 0, 0),
 			BackgroundTransparency = 1,
 			Text = config.Title,
 			TextColor3 = Theme.Text,
@@ -577,8 +651,8 @@ function UIModule:CreateSection(tab, config)
 		})
 		if config.Subtitle then
 			Create("TextLabel", {
-				Size = UDim2.new(1, 0, 0, 14),
-				Position = UDim2.new(0, 0, 0, 19),
+				Size = UDim2.new(1, -textOffset, 0, 14),
+				Position = UDim2.new(0, textOffset, 0, 19),
 				BackgroundTransparency = 1,
 				Text = config.Subtitle,
 				TextColor3 = Theme.TextDim,
@@ -657,8 +731,8 @@ function UIModule:CreateToggle(section, config)
 	local function SetState(state)
 		self.Flags[flag] = state
 		trackGradient.Enabled = state
-		Tween(track, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff })
-		Tween(knob, { Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) })
+		TweenExp(track, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff }, 0.2)
+		TweenExp(knob, { Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }, 0.2)
 		if config.Callback then config.Callback(state) end
 	end
 
@@ -747,8 +821,8 @@ function UIModule:CreateSlider(section, config)
 		self.Flags[flag] = val
 
 		local percent = (val - min) / (max - min)
-		Tween(fill, { Size = UDim2.new(percent, 0, 1, 0) }, 0.08)
-		Tween(knob, { Position = UDim2.new(percent, 0, 0.5, 0) }, 0.08)
+		TweenExp(fill, { Size = UDim2.new(percent, 0, 1, 0) }, 0.1)
+		TweenExp(knob, { Position = UDim2.new(percent, 0, 0.5, 0) }, 0.1)
 		valueLabel.Text = tostring(val) .. (config.Suffix or "")
 		if config.Callback then config.Callback(val) end
 	end
@@ -806,11 +880,11 @@ function UIModule:CreateButton(section, config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = btn })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = btn })
 
-	btn.MouseEnter:Connect(function() Tween(btn, { BackgroundColor3 = Theme.AccentDark }) end)
-	btn.MouseLeave:Connect(function() Tween(btn, { BackgroundColor3 = Theme.ModalBg }) end)
+	btn.MouseEnter:Connect(function() TweenExp(btn, { BackgroundColor3 = Theme.AccentDark }, 0.15) end)
+	btn.MouseLeave:Connect(function() TweenExp(btn, { BackgroundColor3 = Theme.ModalBg }, 0.15) end)
 	btn.MouseButton1Click:Connect(function()
-		Tween(btn, { TextSize = 12 }, 0.05).Completed:Connect(function()
-			Tween(btn, { TextSize = 13 }, 0.05)
+		TweenExp(btn, { TextSize = 12 }, 0.05).Completed:Connect(function()
+			TweenExp(btn, { TextSize = 13 }, 0.08)
 		end)
 		if config.Callback then config.Callback() end
 	end)
@@ -848,7 +922,7 @@ function UIModule:CreateCheckbox(section, config)
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundTransparency = 1,
-		Image = Icons.Check,
+		Image = LucideMap["check"],
 		ImageColor3 = Color3.fromRGB(255, 255, 255),
 		ImageTransparency = default and 0 or 1,
 		Parent = box,
@@ -869,8 +943,8 @@ function UIModule:CreateCheckbox(section, config)
 	local function SetState(state)
 		self.Flags[flag] = state
 		boxGrad.Enabled = state
-		Tween(box, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff })
-		Tween(checkIcon, { ImageTransparency = state and 0 or 1 })
+		TweenExp(box, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff }, 0.15)
+		TweenExp(checkIcon, { ImageTransparency = state and 0 or 1 }, 0.15)
 		if config.Callback then config.Callback(state) end
 	end
 
@@ -955,7 +1029,6 @@ function UIModule:OpenMultiSelectWindow(config)
 		Parent = modalHeader,
 	})
 
-	-- Modal Close Dot (No 'X')
 	local mCloseBtn = Create("TextButton", {
 		Size = UDim2.new(0, 24, 0, 24),
 		Position = UDim2.new(1, -14, 0.5, 0),
@@ -987,18 +1060,8 @@ function UIModule:OpenMultiSelectWindow(config)
 		ZIndex = 52,
 		Parent = modalFrame,
 	})
-	Create("UIListLayout", {
-		Padding = UDim.new(0, 6),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = scrollList,
-	})
-	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 12),
-		PaddingBottom = UDim.new(0, 12),
-		PaddingLeft = UDim.new(0, 14),
-		PaddingRight = UDim.new(0, 14),
-		Parent = scrollList,
-	})
+	Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = scrollList })
+	Create("UIPadding", { PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12), PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14), Parent = scrollList })
 
 	local currentSelected = {}
 	for _, v in ipairs(selected) do currentSelected[v] = true end
@@ -1022,7 +1085,7 @@ function UIModule:OpenMultiSelectWindow(config)
 		local box = Create("Frame", {
 			Size = UDim2.new(0, 18, 0, 18),
 			Position = UDim2.new(0, 10, 0.5, 0),
-			AnchorPoint = Vector2.new(0, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundColor3 = currentSelected[optName] and Theme.Accent or Theme.ToggleOff,
 			BorderSizePixel = 0,
 			ZIndex = 54,
@@ -1037,7 +1100,7 @@ function UIModule:OpenMultiSelectWindow(config)
 			Position = UDim2.new(0.5, 0, 0.5, 0),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundTransparency = 1,
-			Image = Icons.Check,
+			Image = LucideMap["check"],
 			ImageColor3 = Color3.fromRGB(255, 255, 255),
 			ImageTransparency = currentSelected[optName] and 0 or 1,
 			ZIndex = 55,
@@ -1076,8 +1139,8 @@ function UIModule:OpenMultiSelectWindow(config)
 			currentSelected[optName] = not currentSelected[optName]
 			local isSel = currentSelected[optName]
 			boxGrad.Enabled = isSel
-			Tween(box, { BackgroundColor3 = isSel and Theme.Accent or Theme.ToggleOff }, 0.15)
-			Tween(check, { ImageTransparency = isSel and 0 or 1 }, 0.15)
+			TweenExp(box, { BackgroundColor3 = isSel and Theme.Accent or Theme.ToggleOff }, 0.15)
+			TweenExp(check, { ImageTransparency = isSel and 0 or 1 }, 0.15)
 		end)
 	end
 
@@ -1169,8 +1232,8 @@ function UIModule:CreateAdjustmentPicker(section, config)
 		Parent = row,
 	})
 
-	row.MouseEnter:Connect(function() Tween(row, { BackgroundColor3 = Color3.fromRGB(32, 32, 38) }) end)
-	row.MouseLeave:Connect(function() Tween(row, { BackgroundColor3 = Theme.Section }) end)
+	row.MouseEnter:Connect(function() TweenExp(row, { BackgroundColor3 = Color3.fromRGB(32, 32, 38) }, 0.15) end)
+	row.MouseLeave:Connect(function() TweenExp(row, { BackgroundColor3 = Theme.Section }, 0.15) end)
 
 	row.MouseButton1Click:Connect(function()
 		self:OpenMultiSelectWindow({
