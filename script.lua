@@ -1,6 +1,6 @@
 -- ==============================================================================
---                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.4)
---    Gold Subtitle Badge | Overflow Prevention | Dropdown Elevation | Pure ASCII
+--                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.4.1)
+--    Full Library Engine + Complete Component Test Suite (All-In-One Script)
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -40,7 +40,7 @@ local THEME = {
     MinYellow     = Color3.fromRGB(254, 188, 46),
     MaxGreen      = Color3.fromRGB(40, 200, 64),
     
-    -- Silky Smooth Rounded Radius Guidelines
+    -- Rounded Radius Guidelines
     RadiusWindow  = UDim.new(0, 16),
     RadiusCard    = UDim.new(0, 12),
     RadiusItem    = UDim.new(0, 9),
@@ -2264,4 +2264,224 @@ function UIModule:Destroy()
     end
 end
 
-return UIModule
+-- ==============================================================================
+--             IMPLEMENTASI PENGUJIAN: SELURUH FITUR & TOMBOL
+-- ==============================================================================
+
+local Window = UIModule.new({
+    Title = "Xyrax Hub",
+    Subtitle = "Testing Suite v3.4.1",
+    Size = UDim2.new(0, 800, 0, 520),
+    ToggleKey = Enum.KeyCode.RightControl, -- Tekan RightControl untuk sembunyikan/buka UI
+})
+
+-- Notifikasi pembuka
+Window:Notify({
+    Title = "Xyrax Hub Active",
+    Content = "Testing Suite siap. Tekan RightControl untuk hide/show.",
+    Duration = 4,
+})
+
+-- ==============================================================================
+-- TAB 1: INTERACTIVE COMPONENTS (LEFT & RIGHT COLUMN)
+-- ==============================================================================
+Window:CreateCategory("FITUR TESTING")
+local MainTab = Window:CreateTab("Komponen", "zap")
+
+-- --- KOLOM KIRI ---
+local ActionSection = MainTab:CreateSection({
+    Title = "Action Controls",
+    Subtitle = "Buttons, Toggles & Checkbox",
+    Icon = "sparkles",
+    Side = "Left",
+    Toggle = true, -- Master Section Toggle Switch
+    ToggleDefault = true,
+    ToggleCallback = function(enabled)
+        print("[TEST] Master Section Toggle:", enabled)
+        Window:Notify({
+            Title = "Section Master Toggle",
+            Content = "Status section: " .. (enabled and "ON" or "OFF"),
+            Duration = 2,
+        })
+    end
+})
+
+-- 1. Tombol dengan Deskripsi & Ikon
+ActionSection:CreateButton({
+    Title = "Execute Attack",
+    Description = "Memicu serangan instan dan notifikasi",
+    Icon = "swords",
+    Callback = function()
+        print("[TEST] Action Button Executed!")
+        Window:Notify({
+            Title = "Combat Action",
+            Content = "Fungsi tombol berhasil dieksekusi.",
+            Duration = 2,
+        })
+    end
+})
+
+-- 2. Tombol Kompak (1 Baris)
+ActionSection:CreateButton({
+    Title = "Quick Teleport Spawn",
+    Icon = "target",
+    Callback = function()
+        print("[TEST] Quick Teleport Clicked!")
+        Window:Notify({
+            Title = "Teleport",
+            Content = "Teleportasi berhasil dijalankan.",
+            Duration = 2,
+        })
+    end
+})
+
+-- 3. Switch Toggle
+local sprintToggle = ActionSection:CreateToggle({
+    Title = "Infinite Stamina",
+    Description = "Mencegah stamina karakter berkurang",
+    Default = false,
+    Callback = function(state)
+        print("[TEST] Infinite Stamina:", state)
+    end
+})
+
+-- 4. Checkbox
+local godmodeCheckbox = ActionSection:CreateCheckbox({
+    Title = "God Mode (Invincible)",
+    Default = false,
+    Callback = function(state)
+        print("[TEST] God Mode:", state)
+        Window:Notify({
+            Title = "God Mode",
+            Content = "God Mode: " .. tostring(state),
+            Duration = 2,
+        })
+    end
+})
+
+-- 5. Info Label
+ActionSection:CreateInfoLabel({
+    Text = "Catatan: Gunakan tombol macOS di kiri atas (Kuning) untuk minimize UI ke taskbar.",
+    Icon = "info",
+})
+
+-- --- KOLOM KANAN ---
+local InputSection = MainTab:CreateSection({
+    Title = "Input & Selections",
+    Subtitle = "Sliders, Dropdown & Pickers",
+    Icon = "sliders",
+    Side = "Right",
+})
+
+-- 6. Slider
+local speedSlider = InputSection:CreateSlider({
+    Title = "Speed Multiplier",
+    Min = 16,
+    Max = 250,
+    Default = 60,
+    Increment = 2,
+    Suffix = " spd",
+    Callback = function(val)
+        print("[TEST] Speed Slider:", val)
+    end
+})
+
+-- 7. Dropdown (Single-Select)
+local hitboxDropdown = InputSection:CreateDropdown({
+    Title = "Target Hitbox",
+    Options = { "Head", "HumanoidRootPart", "UpperTorso", "Random" },
+    Default = "Head",
+    Callback = function(val)
+        print("[TEST] Dropdown Value:", val)
+        Window:Notify({
+            Title = "Hitbox Target",
+            Content = "Target diubah ke: " .. tostring(val),
+            Duration = 2,
+        })
+    end
+})
+
+-- 8. Text Input Box
+local userInput = InputSection:CreateInput({
+    Title = "Custom Command",
+    Placeholder = "Ketik perintah lalu Enter...",
+    Default = "",
+    Callback = function(text, enterPressed)
+        if enterPressed and text ~= "" then
+            print("[TEST] Command Input:", text)
+            Window:Notify({
+                Title = "Command Input",
+                Content = "Perintah: " .. text,
+                Duration = 2.5,
+            })
+        end
+    end
+})
+
+-- 9. Adjustment Picker: Mode Stepper (< Pilihan >)
+local themeStepper = InputSection:CreateAdjustmentPicker({
+    Title = "Color Preset",
+    Options = { "macOS Dark", "Cyber Gold", "Emerald Mint", "Crimson" },
+    Selected = "macOS Dark",
+    Callback = function(choice, index)
+        print(string.format("[TEST] Preset Stepper: %s (Index: %d)", tostring(choice), index))
+    end
+})
+
+-- 10. Adjustment Picker: Mode Multi-Select ([x])
+local filterPicker = InputSection:CreateAdjustmentPicker({
+    Title = "ESP Target Filter",
+    Options = { "Players", "Zombies", "Chests", "Vehicles" },
+    Selected = { "Players", "Chests" }, -- Multi-select array
+    Callback = function(selectedList)
+        print("[TEST] Multi-Select Targets:", table.concat(selectedList, ", "))
+    end
+})
+
+-- ==============================================================================
+-- TAB 2: SYSTEM & SETTINGS
+-- ==============================================================================
+Window:CreateCategory("PENGATURAN")
+local ConfigTab = Window:CreateTab("Settings", "settings")
+
+local SystemSection = ConfigTab:CreateSection({
+    Title = "Hub Controls",
+    Subtitle = "Atur ulang atau tutup antarmuka",
+    Icon = "code",
+    Side = "Left",
+})
+
+-- Reset Values Button
+SystemSection:CreateButton({
+    Title = "Reset All Components",
+    Description = "Mengembalikan semua nilai slider, toggle, dan input ke awal",
+    Icon = "flame",
+    Callback = function()
+        sprintToggle:Set(false)
+        godmodeCheckbox:Set(false)
+        speedSlider:Set(16)
+        hitboxDropdown:Set("Head")
+        userInput:Set("")
+        
+        Window:Notify({
+            Title = "System Reset",
+            Content = "Seluruh komponen berhasil direset ke nilai awal.",
+            Duration = 3,
+        })
+    end
+})
+
+-- Destroy Button
+SystemSection:CreateButton({
+    Title = "Close & Destroy UI",
+    Description = "Menghapus UI secara aman dari layar",
+    Icon = "skull",
+    Callback = function()
+        Window:Destroy()
+    end
+})
+
+SystemSection:CreateInfoLabel({
+    Text = "Tekan tombol RightControl pada keyboard kapan saja untuk membuka kembali UI jika disembunyikan.",
+    Icon = "info",
+})
