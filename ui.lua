@@ -1,5 +1,5 @@
 -- ==============================================================================
---                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.4.1)
+--                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.4)
 --    Gold Subtitle Badge | Overflow Prevention | Dropdown Elevation | Pure ASCII
 -- ==============================================================================
 
@@ -1000,7 +1000,6 @@ function UIModule:CreateSection(tab, opts)
         Window = window,
     }
     
-    -- FIXED LINE 475: window, container, ... (removed invalid '<>')
     setmetatable(sectionObj, {
         __index = function(t, k)
             if UIModule[k] then
