@@ -1,10 +1,10 @@
 --[[
-	ReaperX UI Library (WindUI Enhanced Edition)
-	- Inspired by: Footagesus/WindUI (MIT License)
-	- Built-in Lucide Icon Resolver (by string name)
-	- WindUI Smooth Exponential / Spring Transitions
-	- Floating Toast Notification System (Window:Notify)
-	- Modal Popups, Corner Resizing, Clean Ambient Close Dot
+	ReaperX UI Library (WindUI Enhanced + Button & Tab Icons/Logos)
+	- Supports Optional Icons/Logos on Buttons, Tabs, and Sections
+	- Built-in Lucide Icon Resolver (by string name or asset ID)
+	- Toast Notifications (Window:Notify)
+	- Modern Crimson Ambient Dot Close Button (No 'X')
+	- Spring/Exponential Transitions & Resizing
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -33,7 +33,7 @@ local Theme = {
 	CloseDot    = Color3.fromRGB(80, 25, 25),
 }
 
--- Built-in Lucide Icons Map (Roblox Official Public Assets)
+-- Built-in Lucide Icons Map
 local LucideMap = {
 	["swords"]    = "rbxassetid://10747377716",
 	["sword"]     = "rbxassetid://10747377716",
@@ -51,12 +51,23 @@ local LucideMap = {
 	["zap"]       = "rbxassetid://10747384501",
 	["flame"]     = "rbxassetid://10747378135",
 	["info"]      = "rbxassetid://10747379567",
+	["copy"]      = "rbxassetid://10747377488",
+	["trash"]     = "rbxassetid://10747383471",
+	["lock"]      = "rbxassetid://10747380721",
+	["unlock"]    = "rbxassetid://10747383780",
 }
 
 function UIModule:GetIcon(iconName)
 	if not iconName or iconName == "" then return nil end
-	if string.find(tostring(iconName), "rbxassetid://") then return iconName end
-	local cleanName = string.lower(tostring(iconName)):gsub("%s+", "")
+	local str = tostring(iconName)
+	if string.find(str, "rbxassetid://") or string.find(str, "rbxthumb://") then
+		return str
+	end
+	local num = str:match("^%d+$")
+	if num then
+		return "rbxthumb://type=Asset&id=" .. num .. "&w=150&h=150"
+	end
+	local cleanName = string.lower(str):gsub("%s+", "")
 	return LucideMap[cleanName] or LucideMap["star"]
 end
 
@@ -69,7 +80,6 @@ local function Create(class, props)
 	return inst
 end
 
--- WindUI Exponential Transition Helper
 local function TweenExp(obj, props, duration)
 	local t = TweenService:Create(obj, TweenInfo.new(duration or 0.25, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), props)
 	t:Play()
@@ -108,7 +118,7 @@ function UIModule.new(config)
 	})
 	self.Gui = gui
 
-	-- Notification Toast Container (WindUI Style)
+	-- Notification Toast Container
 	local notifContainer = Create("Frame", {
 		Name = "Notifications",
 		Size = UDim2.new(0, 300, 1, -20),
@@ -141,7 +151,6 @@ function UIModule.new(config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = main })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = main })
 
-	-- Toggle GUI Keybind
 	UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == (config.ToggleKey or Enum.KeyCode.RightControl) then
 			main.Visible = not main.Visible
@@ -165,7 +174,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Emblem [R]
+	-- Monogram Emblem [R]
 	local emblem = Create("Frame", {
 		Size = UDim2.new(0, 30, 0, 30),
 		Position = UDim2.new(0, 14, 0.5, 0),
@@ -239,7 +248,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Ambient Crimson Dot (Close Button - No 'X')
+	-- Ambient Crimson Dot Close Button
 	local closeBtn = Create("TextButton", {
 		Size = UDim2.new(0, 24, 0, 24),
 		Position = UDim2.new(1, -14, 0.5, 0),
@@ -418,7 +427,7 @@ function UIModule.new(config)
 	return self
 end
 
--- ====================== FLOATING TOAST NOTIFICATION (WINDUI STYLE) ======================
+-- ====================== TOAST NOTIFICATIONS ======================
 function UIModule:Notify(config)
 	config = config or {}
 	local title = config.Title or "Notification"
@@ -427,7 +436,7 @@ function UIModule:Notify(config)
 
 	local toast = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 60),
-		Position = UDim2.new(1, 40, 0, 0), -- Slide in from right
+		Position = UDim2.new(1, 40, 0, 0),
 		BackgroundColor3 = Theme.ModalBg,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
@@ -460,7 +469,6 @@ function UIModule:Notify(config)
 		Parent = toast,
 	})
 
-	-- Timer Bar
 	local timerBar = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 2),
 		Position = UDim2.new(0, 0, 1, -2),
@@ -469,7 +477,6 @@ function UIModule:Notify(config)
 		Parent = toast,
 	})
 
-	-- Slide In
 	TweenExp(toast, { Position = UDim2.new(0, 0, 0, 0) }, 0.3)
 	TweenService:Create(timerBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
 
@@ -480,7 +487,7 @@ function UIModule:Notify(config)
 	end)
 end
 
--- ====================== TABS (NO ICONS + WINDUI CLICK ANIMATION) ======================
+-- ====================== TABS (OPTIONAL ICON / LOGO SUPPORT) ======================
 function UIModule:CreateTabLabel(text)
 	Create("TextLabel", {
 		Size = UDim2.new(1, 0, 0, 22),
@@ -494,8 +501,9 @@ function UIModule:CreateTabLabel(text)
 	})
 end
 
-function UIModule:CreateTab(name)
+function UIModule:CreateTab(name, icon)
 	local tab = { Name = name }
+	local resolvedIcon = self:GetIcon(icon)
 
 	local btn = Create("TextButton", {
 		Size = UDim2.new(1, 0, 0, 36),
@@ -510,7 +518,6 @@ function UIModule:CreateTab(name)
 	local btnGradient = ApplyGradient(btn, Theme.Accent, Theme.AccentDark)
 	btnGradient.Enabled = false
 
-	-- Indicator Line (Animates Height on Click)
 	local indicator = Create("Frame", {
 		Size = UDim2.new(0, 3, 0, 0),
 		Position = UDim2.new(0, 0, 0.5, 0),
@@ -521,9 +528,24 @@ function UIModule:CreateTab(name)
 	})
 	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = indicator })
 
+	local iconImg
+	local textStart = 14
+	if resolvedIcon then
+		textStart = 36
+		iconImg = Create("ImageLabel", {
+			Size = UDim2.new(0, 16, 0, 16),
+			Position = UDim2.new(0, 12, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			Image = resolvedIcon,
+			ImageColor3 = Theme.TextDim,
+			Parent = btn,
+		})
+	end
+
 	local nameLabel = Create("TextLabel", {
-		Size = UDim2.new(1, -24, 1, 0),
-		Position = UDim2.new(0, 14, 0, 0),
+		Size = UDim2.new(1, -(textStart + 8), 1, 0),
+		Position = UDim2.new(0, textStart, 0, 0),
 		BackgroundTransparency = 1,
 		Text = name,
 		TextColor3 = Theme.TextDim,
@@ -547,6 +569,7 @@ function UIModule:CreateTab(name)
 	tab.Gradient = btnGradient
 	tab.NameLabel = nameLabel
 	tab.Indicator = indicator
+	tab.IconImg = iconImg
 
 	btn.MouseButton1Click:Connect(function()
 		TweenExp(btn, { Size = UDim2.new(1, -4, 0, 34) }, 0.08).Completed:Connect(function()
@@ -559,6 +582,7 @@ function UIModule:CreateTab(name)
 		if self.CurrentTab ~= tab then
 			TweenExp(btn, { BackgroundTransparency = 0.92 }, 0.15)
 			TweenExp(nameLabel, { TextColor3 = Theme.Text }, 0.15)
+			if iconImg then TweenExp(iconImg, { ImageColor3 = Theme.Text }, 0.15) end
 			TweenExp(indicator, { Size = UDim2.new(0, 3, 0, 12) }, 0.15)
 		end
 	end)
@@ -567,6 +591,7 @@ function UIModule:CreateTab(name)
 		if self.CurrentTab ~= tab then
 			TweenExp(btn, { BackgroundTransparency = 1 }, 0.15)
 			TweenExp(nameLabel, { TextColor3 = Theme.TextDim }, 0.15)
+			if iconImg then TweenExp(iconImg, { ImageColor3 = Theme.TextDim }, 0.15) end
 			TweenExp(indicator, { Size = UDim2.new(0, 3, 0, 0) }, 0.15)
 		end
 	end)
@@ -583,6 +608,7 @@ function UIModule:SelectTab(tab)
 		t.Button.BackgroundTransparency = 1
 		t.NameLabel.TextColor3 = Theme.TextDim
 		t.NameLabel.Font = Enum.Font.GothamMedium
+		if t.IconImg then TweenExp(t.IconImg, { ImageColor3 = Theme.TextDim }, 0.15) end
 		TweenExp(t.Indicator, { Size = UDim2.new(0, 3, 0, 0) }, 0.15)
 	end
 
@@ -590,6 +616,7 @@ function UIModule:SelectTab(tab)
 	tab.Button.BackgroundTransparency = 0.85
 	tab.NameLabel.TextColor3 = Theme.Text
 	tab.NameLabel.Font = Enum.Font.GothamBold
+	if tab.IconImg then TweenExp(tab.IconImg, { ImageColor3 = Theme.Accent }, 0.2) end
 	TweenExp(tab.Indicator, { Size = UDim2.new(0, 3, 0, 22) }, 0.2)
 
 	tab.Container.Position = UDim2.new(0, 0, 0, 10)
@@ -599,7 +626,7 @@ function UIModule:SelectTab(tab)
 	self.CurrentTab = tab
 end
 
--- ====================== SECTIONS & WIDGETS ======================
+-- ====================== SECTIONS ======================
 function UIModule:CreateSection(tab, config)
 	config = config or {}
 	local section = Create("Frame", {
@@ -621,10 +648,9 @@ function UIModule:CreateSection(tab, config)
 			Parent = section,
 		})
 
-		-- Optional Lucide Icon Support in Section Header
 		local textOffset = 0
-		if config.Icon then
-			local resolvedIcon = self:GetIcon(config.Icon)
+		if config.Icon or config.Logo then
+			local resolvedIcon = self:GetIcon(config.Icon or config.Logo)
 			if resolvedIcon then
 				Create("ImageLabel", {
 					Size = UDim2.new(0, 18, 0, 18),
@@ -666,6 +692,67 @@ function UIModule:CreateSection(tab, config)
 	return section
 end
 
+-- ====================== BUTTON (OPTIONAL ICON / LOGO SUPPORT) ======================
+function UIModule:CreateButton(section, config)
+	config = config or {}
+	local resolvedIcon = self:GetIcon(config.Icon or config.Logo)
+
+	local btn = Create("TextButton", {
+		Size = UDim2.new(1, 0, 0, 34),
+		BackgroundColor3 = Theme.ModalBg,
+		Text = "",
+		AutoButtonColor = false,
+		Parent = section,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = btn })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = btn })
+
+	local iconImg
+	local textStart = 0
+	local textAlignment = Enum.TextXAlignment.Center
+
+	if resolvedIcon then
+		textStart = 34
+		textAlignment = Enum.TextXAlignment.Left
+		iconImg = Create("ImageLabel", {
+			Size = UDim2.new(0, 16, 0, 16),
+			Position = UDim2.new(0, 12, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			Image = resolvedIcon,
+			ImageColor3 = Theme.Accent,
+			Parent = btn,
+		})
+	end
+
+	local btnLabel = Create("TextLabel", {
+		Size = UDim2.new(1, -(textStart + 8), 1, 0),
+		Position = UDim2.new(0, textStart, 0, 0),
+		BackgroundTransparency = 1,
+		Text = config.Name or "Button",
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 13,
+		TextXAlignment = textAlignment,
+		Parent = btn,
+	})
+
+	btn.MouseEnter:Connect(function()
+		TweenExp(btn, { BackgroundColor3 = Theme.AccentDark }, 0.15)
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenExp(btn, { BackgroundColor3 = Theme.ModalBg }, 0.15)
+	end)
+	btn.MouseButton1Click:Connect(function()
+		TweenExp(btn, { Size = UDim2.new(1, -4, 0, 32) }, 0.05).Completed:Connect(function()
+			TweenExp(btn, { Size = UDim2.new(1, 0, 0, 34) }, 0.08)
+		end)
+		if config.Callback then config.Callback() end
+	end)
+	return btn
+end
+
+-- ====================== TOGGLES & SLIDERS & CHECKBOXES ======================
 function UIModule:CreateToggle(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Toggle"
@@ -863,32 +950,6 @@ function UIModule:CreateSlider(section, config)
 		end,
 		Get = function() return self.Flags[flag] end
 	}
-end
-
-function UIModule:CreateButton(section, config)
-	config = config or {}
-	local btn = Create("TextButton", {
-		Size = UDim2.new(1, 0, 0, 34),
-		BackgroundColor3 = Theme.ModalBg,
-		Text = config.Name or "Button",
-		TextColor3 = Theme.Text,
-		Font = Enum.Font.GothamMedium,
-		TextSize = 13,
-		AutoButtonColor = false,
-		Parent = section,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = btn })
-	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = btn })
-
-	btn.MouseEnter:Connect(function() TweenExp(btn, { BackgroundColor3 = Theme.AccentDark }, 0.15) end)
-	btn.MouseLeave:Connect(function() TweenExp(btn, { BackgroundColor3 = Theme.ModalBg }, 0.15) end)
-	btn.MouseButton1Click:Connect(function()
-		TweenExp(btn, { TextSize = 12 }, 0.05).Completed:Connect(function()
-			TweenExp(btn, { TextSize = 13 }, 0.08)
-		end)
-		if config.Callback then config.Callback() end
-	end)
-	return btn
 end
 
 function UIModule:CreateCheckbox(section, config)
