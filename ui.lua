@@ -1,9 +1,10 @@
 --[[
-	ReaperX Hub - Full System UI
-	- Top-Right: Working Logo (with fallback emblem) & Close Button (87463403317153)
-	- Bottom-Right: Corner Drag-Resizing (Clean grip handle)
-	- Settings: UI Adjustment pops up a separate multi-selection window (No dropdown / No icons)
-	- All System Features: Auto Farm, Raids, Sell, Utilities, Webhooks, Player Controls
+	ReaperX Hub - Fixed Full System UI
+	- Fixed: Script crash caused by invalid ImageLabel event
+	- Fixed: Window dragging & corner resizing with full touch/mouse support
+	- Top-Right: Logo & Close Button (87463403317153)
+	- Settings: Clean UI Adjustment button opening a multi-selection popup window
+	- All System Features: Auto Farm, Raids, Sell, Utilities, and Hub Settings
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -18,7 +19,7 @@ local Theme = {
 	Background  = Color3.fromRGB(15, 15, 17),
 	Sidebar     = Color3.fromRGB(20, 20, 23),
 	Content     = Color3.fromRGB(15, 15, 17),
-	Section     = Color3.fromRGB(25, 25, 28),
+	Section     = Color3.fromRGB(24, 24, 28),
 	ModalBg     = Color3.fromRGB(18, 18, 22),
 	Border      = Color3.fromRGB(42, 42, 48),
 
@@ -33,22 +34,18 @@ local Theme = {
 	Dropdown    = Color3.fromRGB(28, 28, 33),
 }
 
--- Asset URLs & IDs
 UIModule.Icons = {
 	Logo     = "rbxassetid://137660498980177",
 	Close    = "rbxassetid://87463403317153",
 
-	-- Sidebar Icons
 	Swords   = "rbxassetid://10747377716",
 	Skull    = "rbxassetid://10747384022",
 	Cart     = "rbxassetid://10747381958",
 	Globe    = "rbxassetid://10747378330",
 	Settings = "rbxassetid://10747383136",
 
-	-- Widgets
 	Star     = "rbxassetid://10747383049",
 	Check    = "rbxassetid://10747376789",
-	Dropdown = "rbxassetid://10747384978",
 }
 local Icons = UIModule.Icons
 
@@ -91,7 +88,7 @@ function UIModule.new(config)
 	self.Title = config.Title or "ReaperX"
 	self.Subtitle = config.Subtitle or "Premium Script Hub"
 	self.Size = config.Size or UDim2.new(0, 800, 0, 500)
-	self.MinSize = config.MinSize or Vector2.new(540, 360)
+	self.MinSize = config.MinSize or Vector2.new(520, 340)
 	self.MaxSize = config.MaxSize or Vector2.new(1200, 850)
 	self.Tabs = {}
 	self.CurrentTab = nil
@@ -113,6 +110,7 @@ function UIModule.new(config)
 		BackgroundColor3 = Theme.Background,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
+		Active = true,
 		Parent = gui,
 	})
 	self.Main = main
@@ -133,6 +131,7 @@ function UIModule.new(config)
 		Size = UDim2.new(1, 0, 0, 52),
 		BackgroundColor3 = Theme.Sidebar,
 		BorderSizePixel = 0,
+		Active = true, -- Crucial for capturing drag events
 		Parent = main,
 	})
 
@@ -168,10 +167,10 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- ========== TOP-RIGHT (LOGO & CLOSE BUTTON) ==========
+	-- ========== TOP-RIGHT (LOGO + CLOSE BUTTON) ==========
 	local topRightArea = Create("Frame", {
 		Size = UDim2.new(0, 80, 1, 0),
-		Position = UDim2.new(1, -14, 0, 0),
+		Position = UDim2.new(1, -12, 0, 0),
 		AnchorPoint = Vector2.new(1, 0),
 		BackgroundTransparency = 1,
 		Parent = titleBar,
@@ -180,21 +179,21 @@ function UIModule.new(config)
 		FillDirection = Enum.FillDirection.Horizontal,
 		HorizontalAlignment = Enum.HorizontalAlignment.Right,
 		VerticalAlignment = Enum.VerticalAlignment.Center,
-		Padding = UDim.new(0, 10),
+		Padding = UDim.new(0, 8),
 		Parent = topRightArea,
 	})
 
-	-- 1. Logo Container with Fallback
-	local logoFrame = Create("Frame", {
+	-- 1. Logo Box
+	local logoBox = Create("Frame", {
 		Size = UDim2.new(0, 28, 0, 28),
 		BackgroundColor3 = Theme.Section,
 		BorderSizePixel = 0,
 		Parent = topRightArea,
 	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoFrame })
-	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = logoFrame })
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoBox })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = logoBox })
 
-	local logoBadge = Create("TextLabel", {
+	Create("TextLabel", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		Text = "RX",
@@ -202,20 +201,19 @@ function UIModule.new(config)
 		Font = Enum.Font.GothamBold,
 		TextSize = 11,
 		ZIndex = 2,
-		Parent = logoFrame,
+		Parent = logoBox,
 	})
 
-	local logoImage = Create("ImageLabel", {
+	Create("ImageLabel", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		Image = Icons.Logo,
 		ScaleType = Enum.ScaleType.Fit,
 		ZIndex = 3,
-		Parent = logoFrame,
+		Parent = logoBox,
 	})
-	logoImage.Loaded:Connect(function() logoBadge.Visible = false end)
 
-	-- 2. Close Button (87463403317153)
+	-- 2. Close Button (Custom ID: 87463403317153)
 	local closeBtn = Create("TextButton", {
 		Size = UDim2.new(0, 28, 0, 28),
 		BackgroundColor3 = Theme.Section,
@@ -340,24 +338,32 @@ function UIModule.new(config)
 		Parent = contentScroll,
 	})
 
-	-- ========== WINDOW DRAGGING LOGIC ==========
-	local dragging, dragStart, startPos = false, nil, nil
+	-- ========== ROBUST WINDOW DRAGGING ==========
+	local dragging = false
+	local dragInput, dragStart, startPos
+
 	titleBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
 			dragStart = input.Position
 			startPos = main.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
 		end
 	end)
 
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
+	titleBar.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
 		end
 	end)
 
 	UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		if input == dragInput and dragging then
 			local delta = input.Position - dragStart
 			main.Position = UDim2.new(
 				startPos.X.Scale,
@@ -368,18 +374,25 @@ function UIModule.new(config)
 		end
 	end)
 
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+
 	-- ========== CORNER RESIZE HANDLE (Bottom-Right) ==========
 	local resizeHandle = Create("TextButton", {
 		Name = "ResizeCorner",
-		Size = UDim2.new(0, 18, 0, 18),
-		Position = UDim2.new(1, -2, 1, -2),
+		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new(1, 0, 1, 0),
 		AnchorPoint = Vector2.new(1, 1),
 		BackgroundTransparency = 1,
 		Text = "◢",
 		TextColor3 = Theme.TextDim,
 		Font = Enum.Font.GothamBold,
 		TextSize = 13,
-		ZIndex = 15,
+		ZIndex = 20,
+		Active = true,
 		Parent = main,
 	})
 
@@ -387,14 +400,14 @@ function UIModule.new(config)
 	resizeHandle.MouseLeave:Connect(function() Tween(resizeHandle, { TextColor3 = Theme.TextDim }) end)
 
 	local resizing = false
-	local resizeStartPos, resizeStartSize, resizeMainCenter
+	local rStartPos, rStartSize, rCenterPos
 
 	resizeHandle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			resizing = true
-			resizeStartPos = input.Position
-			resizeStartSize = main.AbsoluteSize
-			resizeMainCenter = main.Position
+			rStartPos = input.Position
+			rStartSize = main.AbsoluteSize
+			rCenterPos = main.Position
 		end
 	end)
 
@@ -406,19 +419,19 @@ function UIModule.new(config)
 
 	UserInputService.InputChanged:Connect(function(input)
 		if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local delta = input.Position - resizeStartPos
-			local newW = math.clamp(resizeStartSize.X + delta.X, self.MinSize.X, self.MaxSize.X)
-			local newH = math.clamp(resizeStartSize.Y + delta.Y, self.MinSize.Y, self.MaxSize.Y)
+			local delta = input.Position - rStartPos
+			local newW = math.clamp(rStartSize.X + delta.X, self.MinSize.X, self.MaxSize.X)
+			local newH = math.clamp(rStartSize.Y + delta.Y, self.MinSize.Y, self.MaxSize.Y)
 
-			local actualDeltaW = newW - resizeStartSize.X
-			local actualDeltaH = newH - resizeStartSize.Y
+			local dw = newW - rStartSize.X
+			local dh = newH - rStartSize.Y
 
 			main.Size = UDim2.new(0, newW, 0, newH)
 			main.Position = UDim2.new(
-				resizeMainCenter.X.Scale,
-				resizeMainCenter.X.Offset + (actualDeltaW / 2),
-				resizeMainCenter.Y.Scale,
-				resizeMainCenter.Y.Offset + (actualDeltaH / 2)
+				rCenterPos.X.Scale,
+				rCenterPos.X.Offset + (dw / 2),
+				rCenterPos.Y.Scale,
+				rCenterPos.Y.Offset + (dh / 2)
 			)
 		end
 	end)
@@ -444,6 +457,7 @@ function UIModule:OpenMultiSelectWindow(config)
 		BackgroundTransparency = 0.45,
 		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 		ZIndex = 50,
+		Active = true,
 		Parent = self.Gui,
 	})
 
@@ -669,7 +683,7 @@ function UIModule:OpenMultiSelectWindow(config)
 	modalCloseBtn.MouseButton1Click:Connect(CloseModal)
 end
 
--- ====================== UI ADJUSTMENT BUTTON (NO ICONS / NO DROPDOWN) ======================
+-- ====================== UI ADJUSTMENT BUTTON ======================
 function UIModule:CreateAdjustmentPicker(section, config)
 	config = config or {}
 	local flag = config.Flag or "Adjustments"
@@ -687,7 +701,7 @@ function UIModule:CreateAdjustmentPicker(section, config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = row })
 
-	local titleLabel = Create("TextLabel", {
+	Create("TextLabel", {
 		Size = UDim2.new(0.65, 0, 1, 0),
 		Position = UDim2.new(0, 14, 0, 0),
 		BackgroundTransparency = 1,
@@ -1069,23 +1083,23 @@ function UIModule:CreateSlider(section, config)
 		if config.Callback then config.Callback(val) end
 	end
 
-	local dragging = false
+	local draggingSlider = false
 	track.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
+			draggingSlider = true
 			UpdateFromX(input.Position.X)
 		end
 	end)
 
 	local moveConn = UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			UpdateFromX(input.Position.X)
 		end
 	end)
 
 	local endConn = UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
+			draggingSlider = false
 		end
 	end)
 
@@ -1195,18 +1209,18 @@ function UIModule:CreateCheckbox(section, config)
 end
 
 -- =========================================================================
--- ===================== FULL SYSTEM IMPLEMENTATION ========================
+-- ===================== INSTANTIATION & DEMO SETUP ========================
 -- =========================================================================
 
 local Window = UIModule.new({
 	Title = "ReaperX",
 	Subtitle = "Premium Script Hub",
 	Size = UDim2.new(0, 800, 0, 500),
-	MinSize = Vector2.new(540, 360),
+	MinSize = Vector2.new(520, 340),
 	MaxSize = Vector2.new(1200, 850),
 })
 
--- Sidebar Categories
+-- Sidebar Tabs
 Window:CreateTabLabel("Main Systems")
 local TabFarm = Window:CreateTab("Auto Farm", Icons.Swords)
 local TabRaids = Window:CreateTab("Auto Raids", Icons.Skull)
@@ -1216,7 +1230,7 @@ Window:CreateTabLabel("Configuration")
 local TabUtils = Window:CreateTab("Utilities", Icons.Globe)
 local TabSettings = Window:CreateTab("Settings", Icons.Settings)
 
--- ==================== 1. AUTO FARM TAB ====================
+-- 1. Auto Farm Tab
 local FarmSec = Window:CreateSection(TabFarm, {
 	Title = "Auto Farm Configuration",
 	Subtitle = "Automate quest progression and mob farming",
@@ -1226,7 +1240,6 @@ Window:CreateToggle(FarmSec, {
 	Name = "Auto Farm Level",
 	Description = "Automatically accepts quests and farms optimal mobs",
 	Default = true,
-	Callback = function(val) print("Auto Farm:", val) end
 })
 
 Window:CreateToggle(FarmSec, {
@@ -1258,7 +1271,7 @@ Window:CreateCheckbox(FarmSec, {
 	Default = true,
 })
 
--- ==================== 2. AUTO RAIDS TAB ====================
+-- 2. Auto Raids Tab
 local RaidSec = Window:CreateSection(TabRaids, {
 	Title = "Raid Automation",
 	Subtitle = "Instantly clear and farm raids automatically",
@@ -1281,10 +1294,10 @@ Window:CreateCheckbox(RaidSec, {
 
 Window:CreateButton(RaidSec, {
 	Name = "Insta-Teleport to Raid Entrance",
-	Callback = function() print("Teleporting to raid entrance...") end
+	Callback = function() print("Teleported to raid entrance") end
 })
 
--- ==================== 3. AUTO SELL TAB ====================
+-- 3. Auto Sell Tab
 local SellSec = Window:CreateSection(TabSell, {
 	Title = "Inventory Management",
 	Subtitle = "Clean your inventory and open reward crates",
@@ -1308,7 +1321,7 @@ Window:CreateSlider(SellSec, {
 	Suffix = "s",
 })
 
--- ==================== 4. UTILITIES TAB ====================
+-- 4. Utilities Tab
 local UtilSec = Window:CreateSection(TabUtils, {
 	Title = "Player Utilities",
 	Subtitle = "Character enhancements and movement modifiers",
@@ -1353,7 +1366,7 @@ Window:CreateToggle(UtilSec, {
 	Default = true,
 })
 
--- ==================== 5. SETTINGS & UI ADJUSTMENT ====================
+-- 5. Settings Tab
 local SettingsSec = Window:CreateSection(TabSettings, {
 	Title = "UI & Hub Configurations",
 	Subtitle = "Customize the interface and script preferences",
@@ -1384,9 +1397,7 @@ Window:CreateAdjustmentPicker(SettingsSec, {
 Window:CreateButton(SettingsSec, {
 	Name = "Copy Discord Invite",
 	Callback = function()
-		if setclipboard then
-			setclipboard("https://discord.gg/reaperx")
-		end
+		if setclipboard then setclipboard("https://discord.gg/reaperx") end
 	end
 })
 
