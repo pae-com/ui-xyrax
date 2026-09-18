@@ -1,6 +1,6 @@
 -- ==============================================================================
---              XYRAX HUB - EXECUTIVE DUAL-COLUMN EDITION
---     (Dual-Column Grid, Master Section Toggles, Step Sliders & Categories)
+--              XYRAX HUB - MACOS SEQUOIA / SONOMA EDITION
+--     (Native Traffic Lights, Frosted Glass Acrylic, Dual-Column Grid)
 -- ==============================================================================
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -10,30 +10,34 @@ local HttpService = game:GetService("HttpService")
 local UIModule = {}
 UIModule.__index = UIModule
 
--- ==================== THEME SYSTEM ====================
+-- ==================== MACOS DARK VIBRANCY PALETTE ====================
 local THEME = {
-    Canvas       = Color3.fromRGB(13, 13, 16),      -- Main dark background
-    Header       = Color3.fromRGB(15, 15, 19),      -- Titlebar
-    Sidebar      = Color3.fromRGB(15, 15, 19),      -- Sidebar
-    CardBg       = Color3.fromRGB(20, 20, 26),      -- Section card background
-    CardInner    = Color3.fromRGB(25, 25, 33),      -- Inner control tray
-    Recessed     = Color3.fromRGB(15, 15, 20),      -- Input/Slider trough
+    WindowBg     = Color3.fromRGB(20, 20, 24),      -- Frosted Glass Body
+    SidebarBg    = Color3.fromRGB(24, 24, 29),      -- Slightly translucent sidebar
+    HeaderBg     = Color3.fromRGB(26, 26, 32),      -- Window Toolbar
+    CardBg       = Color3.fromRGB(28, 28, 35),      -- macOS Group Box / Section
+    CardInner    = Color3.fromRGB(34, 34, 42),      -- Control background
+    Trough       = Color3.fromRGB(16, 16, 20),      -- Recessed field well
     
-    -- Accent: Velvet Crimson (Matches reference image)
-    Accent       = Color3.fromRGB(225, 35, 55),
-    AccentGlow   = Color3.fromRGB(255, 60, 80),
-    AccentDark   = Color3.fromRGB(140, 20, 35),
+    -- Traffic Lights
+    CloseRed     = Color3.fromRGB(255, 95, 86),
+    MinYellow    = Color3.fromRGB(255, 189, 46),
+    MaxGreen     = Color3.fromRGB(39, 201, 63),
     
-    Border       = Color3.fromRGB(35, 35, 45),
-    BorderLight  = Color3.fromRGB(50, 50, 65),
+    -- Accent: macOS System Blue or Velvet Crimson
+    Accent       = Color3.fromRGB(0, 122, 255),     -- macOS System Blue
+    AccentGlow   = Color3.fromRGB(50, 150, 255),
+    
+    Border       = Color3.fromRGB(42, 42, 52),      -- Subtle Retina Hairline
+    BorderLight  = Color3.fromRGB(60, 60, 75),      -- Specular Highlight
     
     TextHero     = Color3.fromRGB(255, 255, 255),
-    TextBody     = Color3.fromRGB(215, 215, 225),
-    TextMuted    = Color3.fromRGB(135, 135, 150),
-    TextDim      = Color3.fromRGB(80, 80, 95),
+    TextBody     = Color3.fromRGB(225, 225, 235),
+    TextMuted    = Color3.fromRGB(140, 140, 155),
+    TextDim      = Color3.fromRGB(90, 90, 105),
 }
 
--- ==================== VERIFIED ICON MATRIX ====================
+-- ==================== VERIFIED ICON ENGINE ====================
 local FallbackIcons = {
     ["swords"]             = "rbxassetid://81872698913435",
     ["sword"]              = "rbxassetid://124448418211665",
@@ -88,9 +92,7 @@ function UIModule:GetIcon(name)
     if string.find(name, "^rbxassetid://") or string.find(name, "^rbxasset://") or string.find(name, "^http") then
         return { Asset = name }
     end
-    if tonumber(name) then
-        return { Asset = "rbxassetid://" .. name }
-    end
+    if tonumber(name) then return { Asset = "rbxassetid://" .. name } end
 
     local clean = string.lower(name)
     local resolved = IconAliases[clean] or clean
@@ -135,7 +137,7 @@ local function applyIcon(img, iconData, color)
     img.Visible = true
 end
 
--- ==================== MAIN WINDOW CREATION ====================
+-- ==================== MAIN WINDOW ====================
 function UIModule.new(config)
     config = config or {}
     local self = setmetatable({}, UIModule)
@@ -146,7 +148,7 @@ function UIModule.new(config)
     end
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "XyraxExec_" .. tostring(math.random(1000, 9999))
+    screenGui.Name = "XyraxMac_" .. tostring(math.random(1000, 9999))
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -165,26 +167,26 @@ function UIModule.new(config)
     end
     self.ScreenGui = screenGui
 
-    -- Ambient Notifications
+    -- Toast Notification Container (Top Right like macOS Banner)
     local notifContainer = Instance.new("Frame")
-    notifContainer.Name = "Notifs"
+    notifContainer.Name = "MacNotifications"
     notifContainer.Size = UDim2.new(0, 310, 1, -40)
     notifContainer.Position = UDim2.new(1, -330, 0, 20)
     notifContainer.BackgroundTransparency = 1
     notifContainer.Parent = screenGui
 
     local notifLayout = Instance.new("UIListLayout")
-    notifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    notifLayout.VerticalAlignment = Enum.VerticalAlignment.Top
     notifLayout.Padding = UDim.new(0, 10)
     notifLayout.Parent = notifContainer
     self.NotifContainer = notifContainer
 
-    -- Main Window
+    -- Main Frame (Window with macOS Curved Glass)
     local main = Instance.new("Frame")
-    main.Name = "MainWindow"
+    main.Name = "MacWindow"
     main.Size = config.Size or UDim2.new(0, 840, 0, 560)
     main.Position = UDim2.new(0.5, -420, 0.5, -280)
-    main.BackgroundColor3 = THEME.Canvas
+    main.BackgroundColor3 = THEME.WindowBg
     main.BorderSizePixel = 0
     main.ClipsDescendants = true
     main.Active = true
@@ -192,7 +194,7 @@ function UIModule.new(config)
     self.MainFrame = main
 
     local mainCorner = Instance.new("UICorner")
-    mainCorner.CornerRadius = UDim.new(0, 12)
+    mainCorner.CornerRadius = UDim.new(0, 14)
     mainCorner.Parent = main
 
     local mainStroke = Instance.new("UIStroke")
@@ -200,72 +202,86 @@ function UIModule.new(config)
     mainStroke.Thickness = 1.2
     mainStroke.Parent = main
 
-    -- Top Accent Line
-    local topAccentLine = Instance.new("Frame")
-    topAccentLine.Size = UDim2.new(1, 0, 0, 2)
-    topAccentLine.Position = UDim2.new(0, 0, 0, 0)
-    topAccentLine.BackgroundColor3 = THEME.Accent
-    topAccentLine.BorderSizePixel = 0
-    topAccentLine.Parent = main
+    -- ==================== MACOS TOOLBAR (HEADER) ====================
+    local toolbar = Instance.new("Frame")
+    toolbar.Name = "Toolbar"
+    toolbar.Size = UDim2.new(1, 0, 0, 48)
+    toolbar.BackgroundColor3 = THEME.HeaderBg
+    toolbar.BorderSizePixel = 0
+    toolbar.Active = true
+    toolbar.Parent = main
 
-    local taGrad = Instance.new("UIGradient")
-    taGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.AccentGlow),
-        ColorSequenceKeypoint.new(0.5, THEME.Accent),
-        ColorSequenceKeypoint.new(1, THEME.AccentDark)
-    })
-    taGrad.Parent = topAccentLine
+    local tbBorder = Instance.new("Frame")
+    tbBorder.Size = UDim2.new(1, 0, 0, 1)
+    tbBorder.Position = UDim2.new(0, 0, 1, -1)
+    tbBorder.BackgroundColor3 = THEME.Border
+    tbBorder.BorderSizePixel = 0
+    tbBorder.Parent = toolbar
 
-    -- ==================== TITLE BAR ====================
-    local titleBar = Instance.new("Frame")
-    titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 50)
-    titleBar.BackgroundColor3 = THEME.Header
-    titleBar.BorderSizePixel = 0
-    titleBar.Active = true
-    titleBar.Parent = main
+    -- ==================== MACOS TRAFFIC LIGHTS ====================
+    local trafficLights = Instance.new("Frame")
+    trafficLights.Name = "TrafficLights"
+    trafficLights.Size = UDim2.new(0, 70, 1, 0)
+    trafficLights.Position = UDim2.new(0, 16, 0, 0)
+    trafficLights.BackgroundTransparency = 1
+    trafficLights.Parent = toolbar
 
-    local tbDivider = Instance.new("Frame")
-    tbDivider.Size = UDim2.new(1, 0, 0, 1)
-    tbDivider.Position = UDim2.new(0, 0, 1, -1)
-    tbDivider.BackgroundColor3 = THEME.Border
-    tbDivider.BorderSizePixel = 0
-    tbDivider.Parent = titleBar
+    local tlLayout = Instance.new("UIListLayout")
+    tlLayout.FillDirection = Enum.FillDirection.Horizontal
+    tlLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    tlLayout.Padding = UDim.new(0, 8)
+    tlLayout.Parent = trafficLights
 
-    -- Monogram
-    local emblem = Instance.new("Frame")
-    emblem.Size = UDim2.new(0, 26, 0, 26)
-    emblem.Position = UDim2.new(0, 18, 0.5, -13)
-    emblem.BackgroundColor3 = THEME.Accent
-    emblem.BorderSizePixel = 0
-    emblem.Parent = titleBar
+    local function createTrafficLight(name, color, symbolText)
+        local dot = Instance.new("TextButton")
+        dot.Name = name
+        dot.Size = UDim2.new(0, 12, 0, 12)
+        dot.BackgroundColor3 = color
+        dot.BorderSizePixel = 0
+        dot.Text = ""
+        dot.AutoButtonColor = false
+        dot.Parent = trafficLights
 
-    local emCorner = Instance.new("UICorner")
-    emCorner.CornerRadius = UDim.new(0, 6)
-    emCorner.Parent = emblem
+        local dCorner = Instance.new("UICorner")
+        dCorner.CornerRadius = UDim.new(1, 0)
+        dCorner.Parent = dot
 
-    local emGrad = Instance.new("UIGradient")
-    emGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.AccentGlow),
-        ColorSequenceKeypoint.new(1, THEME.AccentDark)
-    })
-    emGrad.Rotation = 45
-    emGrad.Parent = emblem
+        local dStroke = Instance.new("UIStroke")
+        dStroke.Color = Color3.fromRGB(0, 0, 0)
+        dStroke.Transparency = 0.8
+        dStroke.Thickness = 0.8
+        dStroke.Parent = dot
 
-    local emText = Instance.new("TextLabel")
-    emText.Size = UDim2.new(1, 0, 1, 0)
-    emText.BackgroundTransparency = 1
-    emText.Text = string.sub(config.Title or "X", 1, 1)
-    emText.Font = Enum.Font.GothamBold
-    emText.TextSize = 13
-    emText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    emText.Parent = emblem
+        local glyph = Instance.new("TextLabel")
+        glyph.Size = UDim2.new(1, 0, 1, 0)
+        glyph.BackgroundTransparency = 1
+        glyph.Text = symbolText
+        glyph.Font = Enum.Font.GothamBold
+        glyph.TextSize = 8
+        glyph.TextColor3 = Color3.fromRGB(50, 20, 20)
+        glyph.TextTransparency = 1
+        glyph.Parent = dot
 
+        dot.MouseEnter:Connect(function()
+            TweenService:Create(glyph, TweenInfo.new(0.15), { TextTransparency = 0 }):Play()
+        end)
+        dot.MouseLeave:Connect(function()
+            TweenService:Create(glyph, TweenInfo.new(0.15), { TextTransparency = 1 }):Play()
+        end)
+
+        return dot
+    end
+
+    local closeBtn = createTrafficLight("Close", THEME.CloseRed, "✕")
+    local minBtn   = createTrafficLight("Minimize", THEME.MinYellow, "—")
+    local maxBtn   = createTrafficLight("Maximize", THEME.MaxGreen, "+")
+
+    -- Window Title (Centered macOS Style)
     local titleHolder = Instance.new("Frame")
-    titleHolder.Size = UDim2.new(0, 320, 1, 0)
-    titleHolder.Position = UDim2.new(0, 54, 0, 0)
+    titleHolder.Size = UDim2.new(0, 300, 1, 0)
+    titleHolder.Position = UDim2.new(0.5, -150, 0, 0)
     titleHolder.BackgroundTransparency = 1
-    titleHolder.Parent = titleBar
+    titleHolder.Parent = toolbar
 
     local titleLbl = Instance.new("TextLabel")
     titleLbl.Size = UDim2.new(1, 0, 0, 20)
@@ -275,7 +291,7 @@ function UIModule.new(config)
     titleLbl.Font = Enum.Font.GothamBold
     titleLbl.TextSize = 13
     titleLbl.TextColor3 = THEME.TextHero
-    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Center
     titleLbl.Parent = titleHolder
 
     if config.Subtitle then
@@ -285,72 +301,15 @@ function UIModule.new(config)
         subLbl.BackgroundTransparency = 1
         subLbl.Text = config.Subtitle
         subLbl.Font = Enum.Font.Gotham
-        subLbl.TextSize = 11
+        subLbl.TextSize = 10
         subLbl.TextColor3 = THEME.TextMuted
-        subLbl.TextXAlignment = Enum.TextXAlignment.Left
+        subLbl.TextXAlignment = Enum.TextXAlignment.Center
         subLbl.Parent = titleHolder
     end
 
-    -- Window Controls
-    local controls = Instance.new("Frame")
-    controls.Size = UDim2.new(0, 100, 1, 0)
-    controls.Position = UDim2.new(1, -110, 0, 0)
-    controls.BackgroundTransparency = 1
-    controls.Parent = titleBar
-
-    local ctrlLayout = Instance.new("UIListLayout")
-    ctrlLayout.FillDirection = Enum.FillDirection.Horizontal
-    ctrlLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    ctrlLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    ctrlLayout.Padding = UDim.new(0, 8)
-    ctrlLayout.Parent = controls
-
-    local minBtn = Instance.new("TextButton")
-    minBtn.Size = UDim2.new(0, 26, 0, 26)
-    minBtn.BackgroundTransparency = 1
-    minBtn.Text = "—"
-    minBtn.Font = Enum.Font.GothamBold
-    minBtn.TextSize = 11
-    minBtn.TextColor3 = THEME.TextMuted
-    minBtn.AutoButtonColor = false
-    minBtn.Parent = controls
-
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 26, 0, 26)
-    closeBtn.BackgroundTransparency = 1
-    closeBtn.Text = ""
-    closeBtn.AutoButtonColor = false
-    closeBtn.Parent = controls
-
-    local closeIcon = Instance.new("ImageLabel")
-    closeIcon.Size = UDim2.new(0, 13, 0, 13)
-    closeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    closeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-    closeIcon.BackgroundTransparency = 1
-    closeIcon.Image = "rbxassetid://110786993356448"
-    closeIcon.ImageColor3 = THEME.TextMuted
-    closeIcon.Parent = closeBtn
-
-    closeBtn.MouseEnter:Connect(function()
-        TweenService:Create(closeIcon, TweenInfo.new(0.2), { ImageColor3 = THEME.Accent }):Play()
-    end)
-    closeBtn.MouseLeave:Connect(function()
-        TweenService:Create(closeIcon, TweenInfo.new(0.2), { ImageColor3 = THEME.TextMuted }):Play()
-    end)
-
-    local isMin, origSize = false, main.Size
-    minBtn.MouseButton1Click:Connect(function()
-        isMin = not isMin
-        if isMin then
-            origSize = main.Size
-            TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quart), { Size = UDim2.new(origSize.X.Scale, origSize.X.Offset, 0, 50) }):Play()
-        else
-            TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quart), { Size = origSize }):Play()
-        end
-    end)
-
+    -- Traffic Light Actions
     closeBtn.MouseButton1Click:Connect(function()
-        local tw = TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        local tw = TweenService:Create(main, TweenInfo.new(0.24, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
             Size = UDim2.new(0, 0, 0, 0),
             Position = UDim2.new(main.Position.X.Scale, main.Position.X.Offset + (main.Size.X.Offset/2), main.Position.Y.Scale, main.Position.Y.Offset + (main.Size.Y.Offset/2))
         })
@@ -358,9 +317,27 @@ function UIModule.new(config)
         tw.Completed:Connect(function() screenGui:Destroy() end)
     end)
 
-    -- Draggable
+    local isMin, origSize = false, main.Size
+    minBtn.MouseButton1Click:Connect(function()
+        isMin = not isMin
+        if isMin then
+            origSize = main.Size
+            TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quart), { Size = UDim2.new(origSize.X.Scale, origSize.X.Offset, 0, 48) }):Play()
+        else
+            TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Quart), { Size = origSize }):Play()
+        end
+    end)
+
+    maxBtn.MouseButton1Click:Connect(function()
+        TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            Position = UDim2.new(0.5, -420, 0.5, -280),
+            Size = UDim2.new(0, 840, 0, 560)
+        }):Play()
+    end)
+
+    -- Draggable Handling
     local dragging, dragStart, startPos, dragConn
-    titleBar.InputBegan:Connect(function(input)
+    toolbar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
@@ -381,7 +358,7 @@ function UIModule.new(config)
         end
     end)
 
-    -- Resizer Handle
+    -- Window Resize Corner
     local resizeHandle = Instance.new("TextButton")
     resizeHandle.Size = UDim2.new(0, 18, 0, 18)
     resizeHandle.Position = UDim2.new(1, -18, 1, -18)
@@ -415,6 +392,7 @@ function UIModule.new(config)
         end
     end)
 
+    -- Toggle Hotkey
     local toggleKey = config.ToggleKey or Enum.KeyCode.RightControl
     UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.KeyCode == toggleKey then
@@ -422,12 +400,12 @@ function UIModule.new(config)
         end
     end)
 
-    -- Sidebar
+    -- ==================== MACOS SIDEBAR ====================
     local sidebar = Instance.new("ScrollingFrame")
     sidebar.Name = "Sidebar"
-    sidebar.Size = UDim2.new(0, 180, 1, -50)
-    sidebar.Position = UDim2.new(0, 0, 0, 50)
-    sidebar.BackgroundColor3 = THEME.Sidebar
+    sidebar.Size = UDim2.new(0, 190, 1, -48)
+    sidebar.Position = UDim2.new(0, 0, 0, 48)
+    sidebar.BackgroundColor3 = THEME.SidebarBg
     sidebar.BorderSizePixel = 0
     sidebar.ScrollBarThickness = 2
     sidebar.ScrollBarImageColor3 = THEME.Border
@@ -436,29 +414,29 @@ function UIModule.new(config)
     sidebar.Parent = main
 
     local sideLayout = Instance.new("UIListLayout")
-    sideLayout.Padding = UDim.new(0, 4)
+    sideLayout.Padding = UDim.new(0, 3)
     sideLayout.Parent = sidebar
 
     local sidePad = Instance.new("UIPadding")
-    sidePad.PaddingTop = UDim.new(0, 12)
+    sidePad.PaddingTop = UDim.new(0, 14)
     sidePad.PaddingLeft = UDim.new(0, 10)
     sidePad.PaddingRight = UDim.new(0, 10)
     sidePad.Parent = sidebar
 
     local sideDivider = Instance.new("Frame")
-    sideDivider.Size = UDim2.new(0, 1, 1, -50)
-    sideDivider.Position = UDim2.new(0, 180, 0, 50)
+    sideDivider.Size = UDim2.new(0, 1, 1, -48)
+    sideDivider.Position = UDim2.new(0, 190, 0, 48)
     sideDivider.BackgroundColor3 = THEME.Border
     sideDivider.BorderSizePixel = 0
     sideDivider.Parent = main
 
     self.Sidebar = sidebar
 
-    -- Dual-Column Content Canvas
+    -- ==================== DUAL-COLUMN CONTENT CANVAS ====================
     local contentArea = Instance.new("Frame")
     contentArea.Name = "ContentArea"
-    contentArea.Size = UDim2.new(1, -181, 1, -50)
-    contentArea.Position = UDim2.new(0, 181, 0, 50)
+    contentArea.Size = UDim2.new(1, -191, 1, -48)
+    contentArea.Position = UDim2.new(0, 191, 0, 48)
     contentArea.BackgroundTransparency = 1
     contentArea.ClipsDescendants = true
     contentArea.Parent = main
@@ -470,31 +448,31 @@ function UIModule.new(config)
     return self
 end
 
--- ==================== SIDEBAR CATEGORIES ====================
+-- ==================== MACOS SECTION HEADERS (SIDEBAR) ====================
 function UIModule:CreateCategory(name)
     local header = Instance.new("TextLabel")
     header.Name = "Category_" .. name
-    header.Size = UDim2.new(1, 0, 0, 22)
+    header.Size = UDim2.new(1, 0, 0, 24)
     header.BackgroundTransparency = 1
-    header.Text = name
+    header.Text = string.upper(name)
     header.Font = Enum.Font.GothamBold
-    header.TextSize = 11
-    header.TextColor3 = THEME.TextMuted
+    header.TextSize = 10
+    header.TextColor3 = THEME.TextDim
     header.TextXAlignment = Enum.TextXAlignment.Left
     header.Parent = self.Sidebar
 
     local pad = Instance.new("UIPadding")
-    pad.PaddingLeft = UDim.new(0, 8)
-    pad.PaddingTop = UDim.new(0, 4)
+    pad.PaddingLeft = UDim.new(0, 10)
+    pad.PaddingTop = UDim.new(0, 8)
     pad.Parent = header
 end
 
--- ==================== TAB SYSTEM ====================
+-- ==================== MACOS TAB (ROUNDED HIGHLIGHT PILL) ====================
 function UIModule:CreateTab(name, iconName)
     local tabBtn = Instance.new("TextButton")
     tabBtn.Name = "Tab_" .. name
-    tabBtn.Size = UDim2.new(1, 0, 0, 36)
-    tabBtn.BackgroundColor3 = THEME.Sidebar
+    tabBtn.Size = UDim2.new(1, 0, 0, 32)
+    tabBtn.BackgroundColor3 = THEME.SidebarBg
     tabBtn.BorderSizePixel = 0
     tabBtn.Text = ""
     tabBtn.AutoButtonColor = false
@@ -504,25 +482,9 @@ function UIModule:CreateTab(name, iconName)
     tabCorner.CornerRadius = UDim.new(0, 6)
     tabCorner.Parent = tabBtn
 
-    local tabGrad = Instance.new("UIGradient")
-    tabGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.Accent),
-        ColorSequenceKeypoint.new(1, THEME.AccentDark)
-    })
-    tabGrad.Enabled = false
-    tabGrad.Parent = tabBtn
-
-    local pip = Instance.new("Frame")
-    pip.Size = UDim2.new(0, 3, 0.6, 0)
-    pip.Position = UDim2.new(0, 0, 0.2, 0)
-    pip.BackgroundColor3 = THEME.Accent
-    pip.BorderSizePixel = 0
-    pip.Visible = false
-    pip.Parent = tabBtn
-
     local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, 16, 0, 16)
-    icon.Position = UDim2.new(0, 12, 0.5, -8)
+    icon.Size = UDim2.new(0, 15, 0, 15)
+    icon.Position = UDim2.new(0, 10, 0.5, -7)
     icon.BackgroundTransparency = 1
     icon.Parent = tabBtn
 
@@ -533,7 +495,7 @@ function UIModule:CreateTab(name, iconName)
         icon.Visible = false
     end
 
-    local textOffset = (iconData and 36) or 12
+    local textOffset = (iconData and 34) or 12
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -textOffset - 6, 1, 0)
     label.Position = UDim2.new(0, textOffset, 0, 0)
@@ -541,10 +503,11 @@ function UIModule:CreateTab(name, iconName)
     label.Text = name
     label.Font = Enum.Font.GothamMedium
     label.TextSize = 12
-    label.TextColor3 = THEME.TextMuted
+    label.TextColor3 = THEME.TextBody
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = tabBtn
 
+    -- Dual-Column Container Inside Page
     local page = Instance.new("ScrollingFrame")
     page.Name = "Page_" .. name
     page.Size = UDim2.new(1, 0, 1, 0)
@@ -601,17 +564,13 @@ function UIModule:CreateTab(name, iconName)
         ColRight = colRight,
         Label = label,
         Icon = icon,
-        Pip = pip,
-        Grad = tabGrad,
-        SectionCount = 0 -- Used for smart auto-balancing between Left and Right
+        SectionCount = 0
     }
 
     local function selectTab()
         for _, t in pairs(self.Tabs) do
             t.Page.Visible = false
-            t.Pip.Visible = false
-            t.Grad.Enabled = false
-            TweenService:Create(t.Button, TweenInfo.new(0.2), { BackgroundColor3 = THEME.Sidebar }):Play()
+            TweenService:Create(t.Button, TweenInfo.new(0.2), { BackgroundColor3 = THEME.SidebarBg }):Play()
             TweenService:Create(t.Label, TweenInfo.new(0.2), { TextColor3 = THEME.TextMuted }):Play()
             if t.Icon.Visible then
                 TweenService:Create(t.Icon, TweenInfo.new(0.2), { ImageColor3 = THEME.TextMuted }):Play()
@@ -619,9 +578,7 @@ function UIModule:CreateTab(name, iconName)
         end
 
         tabData.Page.Visible = true
-        tabData.Pip.Visible = true
-        tabData.Grad.Enabled = true
-        TweenService:Create(tabBtn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(255, 255, 255) }):Play()
+        TweenService:Create(tabBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.Accent }):Play()
         TweenService:Create(label, TweenInfo.new(0.2), { TextColor3 = THEME.TextHero }):Play()
         if iconData then
             TweenService:Create(icon, TweenInfo.new(0.2), { ImageColor3 = THEME.TextHero }):Play()
@@ -639,19 +596,17 @@ function UIModule:CreateTab(name, iconName)
     return tabData
 end
 
--- ==================== MASTER SECTION WITH AUTO-BALANCING ====================
+-- ==================== MACOS GROUP SECTION (AUTO-BALANCING) ====================
 function UIModule:CreateSection(tab, config)
     config = config or {}
     local parentCol
 
     if type(tab) == "table" and tab.ColLeft and tab.ColRight then
-        -- Auto-balance across left and right columns if Side is not specified
         if config.Side == "Right" then
             parentCol = tab.ColRight
         elseif config.Side == "Left" then
             parentCol = tab.ColLeft
         else
-            -- Smart alternation between Left and Right
             tab.SectionCount = (tab.SectionCount or 0) + 1
             parentCol = (tab.SectionCount % 2 == 1) and tab.ColLeft or tab.ColRight
         end
@@ -667,7 +622,7 @@ function UIModule:CreateSection(tab, config)
     card.Parent = parentCol
 
     local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 8)
+    cardCorner.CornerRadius = UDim.new(0, 10)
     cardCorner.Parent = card
 
     local cardStroke = Instance.new("UIStroke")
@@ -694,8 +649,8 @@ function UIModule:CreateSection(tab, config)
         hdr.Parent = card
 
         local icon = Instance.new("ImageLabel")
-        icon.Size = UDim2.new(0, 18, 0, 18)
-        icon.Position = UDim2.new(0, 0, 0.5, -9)
+        icon.Size = UDim2.new(0, 16, 0, 16)
+        icon.Position = UDim2.new(0, 0, 0.5, -8)
         icon.BackgroundTransparency = 1
         icon.Parent = hdr
 
@@ -703,13 +658,13 @@ function UIModule:CreateSection(tab, config)
         local hOffset = 0
         if iconData then
             applyIcon(icon, iconData, THEME.Accent)
-            hOffset = 26
+            hOffset = 24
         else
             icon.Visible = false
         end
 
         local titleHolder = Instance.new("Frame")
-        titleHolder.Size = UDim2.new(1, -hOffset - (config.Toggle and 50 or 0), 1, 0)
+        titleHolder.Size = UDim2.new(1, -hOffset - (config.Toggle and 46 or 0), 1, 0)
         titleHolder.Position = UDim2.new(0, hOffset, 0, 0)
         titleHolder.BackgroundTransparency = 1
         titleHolder.Parent = hdr
@@ -738,36 +693,37 @@ function UIModule:CreateSection(tab, config)
             subLbl.Parent = titleHolder
         end
 
+        -- Native macOS Master Switch
         if config.Toggle ~= nil then
             local tState = config.ToggleDefault or false
-            local tBtn = Instance.new("TextButton")
-            tBtn.Size = UDim2.new(0, 38, 0, 20)
-            tBtn.Position = UDim2.new(1, -38, 0.5, -10)
-            tBtn.BackgroundColor3 = tState and THEME.Accent or THEME.Recessed
-            tBtn.BorderSizePixel = 0
-            tBtn.Text = ""
-            tBtn.AutoButtonColor = false
-            tBtn.Parent = hdr
+            local tPill = Instance.new("TextButton")
+            tPill.Size = UDim2.new(0, 36, 0, 20)
+            tPill.Position = UDim2.new(1, -36, 0.5, -10)
+            tPill.BackgroundColor3 = tState and THEME.Accent or THEME.Trough
+            tPill.BorderSizePixel = 0
+            tPill.Text = ""
+            tPill.AutoButtonColor = false
+            tPill.Parent = hdr
 
-            local tCorner = Instance.new("UICorner")
-            tCorner.CornerRadius = UDim.new(1, 0)
-            tCorner.Parent = tBtn
+            local tpCorner = Instance.new("UICorner")
+            tpCorner.CornerRadius = UDim.new(1, 0)
+            tpCorner.Parent = tPill
 
             local tKnob = Instance.new("Frame")
-            tKnob.Size = UDim2.new(0, 14, 0, 14)
-            tKnob.Position = tState and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+            tKnob.Size = UDim2.new(0, 16, 0, 16)
+            tKnob.Position = tState and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
             tKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             tKnob.BorderSizePixel = 0
-            tKnob.Parent = tBtn
+            tKnob.Parent = tPill
 
             local tkCorner = Instance.new("UICorner")
             tkCorner.CornerRadius = UDim.new(1, 0)
             tkCorner.Parent = tKnob
 
-            tBtn.MouseButton1Click:Connect(function()
+            tPill.MouseButton1Click:Connect(function()
                 tState = not tState
-                TweenService:Create(tBtn, TweenInfo.new(0.2), { BackgroundColor3 = tState and THEME.Accent or THEME.Recessed }):Play()
-                TweenService:Create(tKnob, TweenInfo.new(0.2), { Position = tState and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 3, 0.5, -7) }):Play()
+                TweenService:Create(tPill, TweenInfo.new(0.2), { BackgroundColor3 = tState and THEME.Accent or THEME.Trough }):Play()
+                TweenService:Create(tKnob, TweenInfo.new(0.2), { Position = tState and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8) }):Play()
                 if config.ToggleCallback then task.spawn(config.ToggleCallback, tState) end
             end)
         end
@@ -780,13 +736,13 @@ function UIModule:CreateSection(tab, config)
     return card
 end
 
--- ==================== WIDGET: BUTTON ====================
+-- ==================== MACOS WIDGET: PUSH BUTTON ====================
 function UIModule:CreateButton(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, config.Description and 46 or 36)
+    btn.Size = UDim2.new(1, 0, 0, config.Description and 46 or 34)
     btn.BackgroundColor3 = THEME.CardInner
     btn.BorderSizePixel = 0
     btn.Text = ""
@@ -802,8 +758,8 @@ function UIModule:CreateButton(parent, config)
     stroke.Parent = btn
 
     local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, 16, 0, 16)
-    icon.Position = UDim2.new(0, 10, 0.5, -8)
+    icon.Size = UDim2.new(0, 15, 0, 15)
+    icon.Position = UDim2.new(0, 10, 0.5, -7)
     icon.BackgroundTransparency = 1
     icon.Parent = btn
 
@@ -811,14 +767,14 @@ function UIModule:CreateButton(parent, config)
     local offset = 10
     if iconData then
         applyIcon(icon, iconData, THEME.TextHero)
-        offset = 34
+        offset = 32
     else
         icon.Visible = false
     end
 
     local titleLbl = Instance.new("TextLabel")
     titleLbl.Size = UDim2.new(1, -offset - 10, 0, 18)
-    titleLbl.Position = UDim2.new(0, offset, 0, config.Description and 6 or 9)
+    titleLbl.Position = UDim2.new(0, offset, 0, config.Description and 6 or 8)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Text = config.Title or "Button"
     titleLbl.Font = Enum.Font.GothamMedium
@@ -841,7 +797,7 @@ function UIModule:CreateButton(parent, config)
     end
 
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(32, 32, 42) }):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(44, 44, 54) }):Play()
     end)
     btn.MouseLeave:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardInner }):Play()
@@ -857,14 +813,14 @@ function UIModule:CreateButton(parent, config)
     return btn
 end
 
--- ==================== WIDGET: STANDALONE TOGGLE (FIX FOR CRASH) ====================
+-- ==================== MACOS WIDGET: SYSTEM TOGGLE ====================
 function UIModule:CreateToggle(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
     local state = config.Default or false
 
     local row = Instance.new("TextButton")
-    row.Size = UDim2.new(1, 0, 0, config.Description and 46 or 36)
+    row.Size = UDim2.new(1, 0, 0, config.Description and 46 or 34)
     row.BackgroundColor3 = THEME.CardInner
     row.BorderSizePixel = 0
     row.Text = ""
@@ -880,8 +836,8 @@ function UIModule:CreateToggle(parent, config)
     stroke.Parent = row
 
     local titleLbl = Instance.new("TextLabel")
-    titleLbl.Size = UDim2.new(1, -60, 0, 18)
-    titleLbl.Position = UDim2.new(0, 10, 0, config.Description and 6 or 9)
+    titleLbl.Size = UDim2.new(1, -55, 0, 18)
+    titleLbl.Position = UDim2.new(0, 10, 0, config.Description and 6 or 8)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Text = config.Title or "Toggle"
     titleLbl.Font = Enum.Font.GothamMedium
@@ -892,7 +848,7 @@ function UIModule:CreateToggle(parent, config)
 
     if config.Description then
         local descLbl = Instance.new("TextLabel")
-        descLbl.Size = UDim2.new(1, -60, 0, 14)
+        descLbl.Size = UDim2.new(1, -55, 0, 14)
         descLbl.Position = UDim2.new(0, 10, 0, 24)
         descLbl.BackgroundTransparency = 1
         descLbl.Text = config.Description
@@ -904,9 +860,9 @@ function UIModule:CreateToggle(parent, config)
     end
 
     local pill = Instance.new("Frame")
-    pill.Size = UDim2.new(0, 38, 0, 20)
-    pill.Position = UDim2.new(1, -48, 0.5, -10)
-    pill.BackgroundColor3 = state and THEME.Accent or THEME.Recessed
+    pill.Size = UDim2.new(0, 36, 0, 20)
+    pill.Position = UDim2.new(1, -46, 0.5, -10)
+    pill.BackgroundColor3 = state and THEME.Accent or THEME.Trough
     pill.BorderSizePixel = 0
     pill.Parent = row
 
@@ -915,8 +871,8 @@ function UIModule:CreateToggle(parent, config)
     pCorner.Parent = pill
 
     local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, 14, 0, 14)
-    knob.Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
     knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     knob.BorderSizePixel = 0
     knob.Parent = pill
@@ -927,8 +883,8 @@ function UIModule:CreateToggle(parent, config)
 
     local function update(val)
         state = val
-        local targetColor = state and THEME.Accent or THEME.Recessed
-        local targetPos = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+        local targetColor = state and THEME.Accent or THEME.Trough
+        local targetPos = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
         TweenService:Create(pill, TweenInfo.new(0.2), { BackgroundColor3 = targetColor }):Play()
         TweenService:Create(knob, TweenInfo.new(0.2), { Position = targetPos }):Play()
         if config.Callback then task.spawn(config.Callback, state) end
@@ -942,7 +898,7 @@ function UIModule:CreateToggle(parent, config)
     }
 end
 
--- ==================== WIDGET: STEP SLIDER (- / + BUTTONS) ====================
+-- ==================== MACOS WIDGET: STEP SLIDER (- / +) ====================
 function UIModule:CreateSlider(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -955,7 +911,7 @@ function UIModule:CreateSlider(parent, config)
     local val = math.clamp(default, min, max)
 
     local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 48)
+    row.Size = UDim2.new(1, 0, 0, 46)
     row.BackgroundTransparency = 1
     row.Parent = container
 
@@ -981,30 +937,31 @@ function UIModule:CreateSlider(parent, config)
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
     valLbl.Parent = row
 
+    -- Stepper Controls: [ - ] [=========TRACK=========] [ + ]
     local minusBtn = Instance.new("TextButton")
     minusBtn.Size = UDim2.new(0, 16, 0, 16)
-    minusBtn.Position = UDim2.new(0, 0, 0, 26)
+    minusBtn.Position = UDim2.new(0, 0, 0, 24)
     minusBtn.BackgroundTransparency = 1
-    minusBtn.Text = "-"
+    minusBtn.Text = "–"
     minusBtn.Font = Enum.Font.GothamBold
-    minusBtn.TextSize = 14
+    minusBtn.TextSize = 12
     minusBtn.TextColor3 = THEME.TextMuted
     minusBtn.Parent = row
 
     local plusBtn = Instance.new("TextButton")
     plusBtn.Size = UDim2.new(0, 16, 0, 16)
-    plusBtn.Position = UDim2.new(1, -16, 0, 26)
+    plusBtn.Position = UDim2.new(1, -16, 0, 24)
     plusBtn.BackgroundTransparency = 1
     plusBtn.Text = "+"
     plusBtn.Font = Enum.Font.GothamBold
-    plusBtn.TextSize = 14
+    plusBtn.TextSize = 12
     plusBtn.TextColor3 = THEME.TextMuted
     plusBtn.Parent = row
 
     local track = Instance.new("Frame")
     track.Size = UDim2.new(1, -44, 0, 4)
-    track.Position = UDim2.new(0, 22, 0, 32)
-    track.BackgroundColor3 = THEME.Recessed
+    track.Position = UDim2.new(0, 22, 0, 30)
+    track.BackgroundColor3 = THEME.Trough
     track.BorderSizePixel = 0
     track.Parent = row
 
@@ -1024,15 +981,15 @@ function UIModule:CreateSlider(parent, config)
     fillCorner.Parent = fill
 
     local thumb = Instance.new("Frame")
-    thumb.Size = UDim2.new(0, 14, 0, 14)
+    thumb.Size = UDim2.new(0, 12, 0, 12)
     thumb.AnchorPoint = Vector2.new(0.5, 0.5)
     thumb.Position = UDim2.new(ratio, 0, 0.5, 0)
-    thumb.BackgroundColor3 = Color3.fromRGB(220, 220, 225)
+    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     thumb.BorderSizePixel = 0
     thumb.Parent = track
 
     local thCorner = Instance.new("UICorner")
-    thCorner.CornerRadius = UDim.new(0, 4)
+    thCorner.CornerRadius = UDim.new(1, 0)
     thCorner.Parent = thumb
 
     local function applyValue(newVal)
@@ -1073,7 +1030,7 @@ function UIModule:CreateSlider(parent, config)
     }
 end
 
--- ==================== WIDGET: DROPDOWN ====================
+-- ==================== MACOS WIDGET: POPUP DROPDOWN ====================
 function UIModule:CreateDropdown(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -1082,13 +1039,13 @@ function UIModule:CreateDropdown(parent, config)
     local open = false
 
     local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1, 0, 0, 32)
+    holder.Size = UDim2.new(1, 0, 0, 30)
     holder.BackgroundTransparency = 1
     holder.ClipsDescendants = true
     holder.Parent = container
 
     local titleLbl = Instance.new("TextLabel")
-    titleLbl.Size = UDim2.new(0.45, 0, 0, 30)
+    titleLbl.Size = UDim2.new(0.45, 0, 0, 28)
     titleLbl.Position = UDim2.new(0, 0, 0, 0)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Text = config.Title or "Dropdown"
@@ -1099,16 +1056,16 @@ function UIModule:CreateDropdown(parent, config)
     titleLbl.Parent = holder
 
     local dropBtn = Instance.new("TextButton")
-    dropBtn.Size = UDim2.new(0.55, 0, 0, 28)
+    dropBtn.Size = UDim2.new(0.55, 0, 0, 26)
     dropBtn.Position = UDim2.new(0.45, 0, 0, 1)
-    dropBtn.BackgroundColor3 = THEME.Recessed
+    dropBtn.BackgroundColor3 = THEME.CardInner
     dropBtn.BorderSizePixel = 0
     dropBtn.Text = ""
     dropBtn.AutoButtonColor = false
     dropBtn.Parent = holder
 
     local dbCorner = Instance.new("UICorner")
-    dbCorner.CornerRadius = UDim.new(0, 6)
+    dbCorner.CornerRadius = UDim.new(0, 5)
     dbCorner.Parent = dropBtn
 
     local dbStroke = Instance.new("UIStroke")
@@ -1126,34 +1083,33 @@ function UIModule:CreateDropdown(parent, config)
     selLbl.TextXAlignment = Enum.TextXAlignment.Left
     selLbl.Parent = dropBtn
 
-    local arrow = Instance.new("TextLabel")
-    arrow.Size = UDim2.new(0, 16, 1, 0)
-    arrow.Position = UDim2.new(1, -20, 0, 0)
-    arrow.BackgroundTransparency = 1
-    arrow.Text = "▼"
-    arrow.Font = Enum.Font.GothamBold
-    arrow.TextSize = 8
-    arrow.TextColor3 = THEME.TextMuted
-    arrow.Parent = dropBtn
+    local chevrons = Instance.new("TextLabel")
+    chevrons.Size = UDim2.new(0, 16, 1, 0)
+    chevrons.Position = UDim2.new(1, -18, 0, 0)
+    chevrons.BackgroundTransparency = 1
+    chevrons.Text = "↕"
+    chevrons.Font = Enum.Font.GothamBold
+    chevrons.TextSize = 11
+    chevrons.TextColor3 = THEME.TextMuted
+    chevrons.Parent = dropBtn
 
     local optList = Instance.new("Frame")
     optList.Size = UDim2.new(0.55, 0, 0, #options * 26)
-    optList.Position = UDim2.new(0.45, 0, 0, 32)
-    optList.BackgroundColor3 = THEME.Recessed
+    optList.Position = UDim2.new(0.45, 0, 0, 30)
+    optList.BackgroundColor3 = THEME.CardInner
     optList.BorderSizePixel = 0
     optList.Parent = holder
 
     local optCorner = Instance.new("UICorner")
-    optCorner.CornerRadius = UDim.new(0, 6)
+    optCorner.CornerRadius = UDim.new(0, 5)
     optCorner.Parent = optList
 
     local optLayout = Instance.new("UIListLayout")
     optLayout.Parent = optList
 
     local function refresh()
-        local targetH = open and (34 + #options * 26 + 4) or 32
+        local targetH = open and (32 + #options * 26 + 4) or 30
         TweenService:Create(holder, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0, targetH) }):Play()
-        TweenService:Create(arrow, TweenInfo.new(0.2), { Rotation = open and 180 or 0 }):Play()
     end
 
     for _, opt in ipairs(options) do
@@ -1196,21 +1152,21 @@ function UIModule:CreateDropdown(parent, config)
     }
 end
 
--- ==================== WIDGET: RIGHT-ALIGNED CHECKBOX ====================
+-- ==================== MACOS WIDGET: CHECKBOX ====================
 function UIModule:CreateCheckbox(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
     local checked = config.Default or false
 
     local row = Instance.new("TextButton")
-    row.Size = UDim2.new(1, 0, 0, 28)
+    row.Size = UDim2.new(1, 0, 0, 26)
     row.BackgroundTransparency = 1
     row.Text = ""
     row.AutoButtonColor = false
     row.Parent = container
 
     local titleLbl = Instance.new("TextLabel")
-    titleLbl.Size = UDim2.new(1, -30, 1, 0)
+    titleLbl.Size = UDim2.new(1, -26, 1, 0)
     titleLbl.Position = UDim2.new(0, 0, 0, 0)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Text = config.Title or "Checkbox"
@@ -1221,9 +1177,9 @@ function UIModule:CreateCheckbox(parent, config)
     titleLbl.Parent = row
 
     local box = Instance.new("Frame")
-    box.Size = UDim2.new(0, 18, 0, 18)
-    box.Position = UDim2.new(1, -18, 0.5, -9)
-    box.BackgroundColor3 = checked and THEME.Accent or THEME.Recessed
+    box.Size = UDim2.new(0, 16, 0, 16)
+    box.Position = UDim2.new(1, -16, 0.5, -8)
+    box.BackgroundColor3 = checked and THEME.Accent or THEME.Trough
     box.BorderSizePixel = 0
     box.Parent = row
 
@@ -1240,7 +1196,7 @@ function UIModule:CreateCheckbox(parent, config)
     checkmark.BackgroundTransparency = 1
     checkmark.Text = "✓"
     checkmark.Font = Enum.Font.GothamBold
-    checkmark.TextSize = 11
+    checkmark.TextSize = 10
     checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
     checkmark.Visible = checked
     checkmark.Parent = box
@@ -1249,7 +1205,7 @@ function UIModule:CreateCheckbox(parent, config)
         checked = val
         checkmark.Visible = checked
         TweenService:Create(box, TweenInfo.new(0.2), {
-            BackgroundColor3 = checked and THEME.Accent or THEME.Recessed
+            BackgroundColor3 = checked and THEME.Accent or THEME.Trough
         }):Play()
         TweenService:Create(bStroke, TweenInfo.new(0.2), {
             Color = checked and THEME.Accent or THEME.Border
@@ -1265,13 +1221,13 @@ function UIModule:CreateCheckbox(parent, config)
     }
 end
 
--- ==================== WIDGET: TEXT INPUT ====================
+-- ==================== MACOS WIDGET: TEXT FIELD ====================
 function UIModule:CreateInput(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
 
     local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 32)
+    row.Size = UDim2.new(1, 0, 0, 30)
     row.BackgroundTransparency = 1
     row.Parent = container
 
@@ -1287,12 +1243,12 @@ function UIModule:CreateInput(parent, config)
     titleLbl.Parent = row
 
     local tb = Instance.new("TextBox")
-    tb.Size = UDim2.new(0.55, 0, 0, 26)
-    tb.Position = UDim2.new(0.45, 0, 0.5, -13)
-    tb.BackgroundColor3 = THEME.Recessed
+    tb.Size = UDim2.new(0.55, 0, 0, 24)
+    tb.Position = UDim2.new(0.45, 0, 0.5, -12)
+    tb.BackgroundColor3 = THEME.Trough
     tb.BorderSizePixel = 0
     tb.Text = config.Default or ""
-    tb.PlaceholderText = config.Placeholder or "Type here..."
+    tb.PlaceholderText = config.Placeholder or "Enter value..."
     tb.PlaceholderColor3 = THEME.TextDim
     tb.Font = Enum.Font.Gotham
     tb.TextSize = 11
@@ -1301,7 +1257,7 @@ function UIModule:CreateInput(parent, config)
     tb.Parent = row
 
     local tbCorner = Instance.new("UICorner")
-    tbCorner.CornerRadius = UDim.new(0, 6)
+    tbCorner.CornerRadius = UDim.new(0, 5)
     tbCorner.Parent = tb
 
     local tbStroke = Instance.new("UIStroke")
@@ -1322,13 +1278,13 @@ function UIModule:CreateInput(parent, config)
     }
 end
 
--- ==================== WIDGET: ADJUSTMENT PICKER ====================
+-- ==================== MACOS WIDGET: MULTI-SELECT PICKER ====================
 function UIModule:CreateAdjustmentPicker(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.Size = UDim2.new(1, 0, 0, 34)
     btn.BackgroundColor3 = THEME.CardInner
     btn.BorderSizePixel = 0
     btn.Text = ""
@@ -1356,7 +1312,7 @@ function UIModule:CreateAdjustmentPicker(parent, config)
 
     btn.MouseButton1Click:Connect(function()
         UIModule:OpenMultiSelectWindow({
-            Title = config.Title or "Select Options",
+            Title = config.Title or "Select Items",
             Options = config.Options or {},
             Selected = config.Selected or {},
             Callback = config.Callback
@@ -1375,7 +1331,7 @@ function UIModule:OpenMultiSelectWindow(config)
     local overlay = Instance.new("TextButton")
     overlay.Size = UDim2.new(1, 0, 1, 0)
     overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    overlay.BackgroundTransparency = 0.55
+    overlay.BackgroundTransparency = 0.5
     overlay.Text = ""
     overlay.AutoButtonColor = false
     overlay.Parent = screenGui
@@ -1383,12 +1339,12 @@ function UIModule:OpenMultiSelectWindow(config)
     local modal = Instance.new("Frame")
     modal.Size = UDim2.new(0, 320, 0, 360)
     modal.Position = UDim2.new(0.5, -160, 0.5, -180)
-    modal.BackgroundColor3 = THEME.Canvas
+    modal.BackgroundColor3 = THEME.WindowBg
     modal.BorderSizePixel = 0
     modal.Parent = overlay
 
     local modalCorner = Instance.new("UICorner")
-    modalCorner.CornerRadius = UDim.new(0, 10)
+    modalCorner.CornerRadius = UDim.new(0, 12)
     modalCorner.Parent = modal
 
     local modalStroke = Instance.new("UIStroke")
@@ -1427,7 +1383,7 @@ function UIModule:OpenMultiSelectWindow(config)
     for _, opt in ipairs(config.Options or {}) do
         local row = Instance.new("TextButton")
         row.Size = UDim2.new(1, -6, 0, 30)
-        row.BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(36, 20, 26) or THEME.CardBg
+        row.BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(30, 40, 55) or THEME.CardBg
         row.BorderSizePixel = 0
         row.Text = ""
         row.AutoButtonColor = false
@@ -1462,7 +1418,7 @@ function UIModule:OpenMultiSelectWindow(config)
             selectedMap[opt] = not selectedMap[opt]
             ind.Text = selectedMap[opt] and "✓" or ""
             rText.TextColor3 = selectedMap[opt] and THEME.Accent or THEME.TextMuted
-            row.BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(36, 20, 26) or THEME.CardBg
+            row.BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(30, 40, 55) or THEME.CardBg
         end)
     end
 
@@ -1473,7 +1429,7 @@ function UIModule:OpenMultiSelectWindow(config)
     doneBtn.Position = UDim2.new(0, 10, 1, -40)
     doneBtn.BackgroundColor3 = THEME.Accent
     doneBtn.BorderSizePixel = 0
-    doneBtn.Text = "Confirm Selection"
+    doneBtn.Text = "Done"
     doneBtn.Font = Enum.Font.GothamBold
     doneBtn.TextSize = 12
     doneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1494,7 +1450,7 @@ function UIModule:OpenMultiSelectWindow(config)
     end)
 end
 
--- ==================== NOTIFICATIONS ====================
+-- ==================== NOTIFICATIONS (MACOS BANNER) ====================
 function UIModule:Notify(config)
     config = config or {}
     local duration = config.Duration or 3.5
@@ -1506,7 +1462,7 @@ function UIModule:Notify(config)
     card.Parent = self.NotifContainer
 
     local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 8)
+    cardCorner.CornerRadius = UDim.new(0, 10)
     cardCorner.Parent = card
 
     local cardStroke = Instance.new("UIStroke")
@@ -1535,14 +1491,6 @@ function UIModule:Notify(config)
     dLbl.TextXAlignment = Enum.TextXAlignment.Left
     dLbl.Parent = card
 
-    local bar = Instance.new("Frame")
-    bar.Size = UDim2.new(1, 0, 0, 2)
-    bar.Position = UDim2.new(0, 0, 1, -2)
-    bar.BackgroundColor3 = THEME.Accent
-    bar.BorderSizePixel = 0
-    bar.Parent = card
-
-    TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
     task.delay(duration, function()
         local tw = TweenService:Create(card, TweenInfo.new(0.3), { BackgroundTransparency = 1 })
         tw:Play()
