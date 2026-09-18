@@ -50,26 +50,26 @@ local THEME = {
 
 -- Fallback high-res Lucide icons
 local FallbackIcons = {
-    swords = "rbxassetid://81872698913435",
-    shield = "rbxassetid://110786993356448",
-    zap = "rbxassetid://10709791437",
+    swords    = "rbxassetid://81872698913435",
+    shield    = "rbxassetid://110786993356448",
+    zap       = "rbxassetid://10709791437",
     crosshair = "rbxassetid://10709789810",
-    flame = "rbxassetid://10709790202",
-    target = "rbxassetid://10709791130",
-    sparkles = "rbxassetid://10709790832",
-    skull = "rbxassetid://10709790697",
-    eye = "rbxassetid://10709790100",
-    info = "rbxassetid://10709790369",
-    search = "rbxassetid://10709790948",
-    settings = "rbxassetid://10709791053",
-    sliders = "rbxassetid://10709791053",
-    bell = "rbxassetid://10709789960",
-    check = "rbxassetid://93898873302694",
-    x = "rbxassetid://110786993356448",
-    chevron = "rbxassetid://10709790184",
-    code = "rbxassetid://10709789908",
-    layers = "rbxassetid://10709790462",
-    maximize = "rbxassetid://10709790558",
+    flame     = "rbxassetid://10709790202",
+    target    = "rbxassetid://10709791130",
+    sparkles  = "rbxassetid://10709790832",
+    skull     = "rbxassetid://10709790697",
+    eye       = "rbxassetid://10709790100",
+    info      = "rbxassetid://10709790369",
+    search    = "rbxassetid://10709790948",
+    settings  = "rbxassetid://10709791053",
+    sliders   = "rbxassetid://10709791053",
+    bell      = "rbxassetid://10709789960",
+    check     = "rbxassetid://93898873302694",
+    x         = "rbxassetid://110786993356448",
+    chevron   = "rbxassetid://10709790184",
+    code      = "rbxassetid://10709789908",
+    layers    = "rbxassetid://10709790462",
+    maximize  = "rbxassetid://10709790558",
 }
 
 local function GetIcon(name)
@@ -274,13 +274,15 @@ function UIModule.new(cfg)
     end)
 
     CreateTrafficButton("MaxBtn", THEME.MaxGreen, function()
-        Tween(mainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-            Position = mainFrame.Position + UDim2.new(0, 0, 0, -4)
-        })
-        task.wait(0.1)
-        Tween(mainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-            Position = mainFrame.Position
-        })
+        task.spawn(function()
+            Tween(mainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                Position = mainFrame.Position + UDim2.new(0, 0, 0, -4)
+            })
+            task.wait(0.1)
+            Tween(mainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+                Position = mainFrame.Position
+            })
+        end)
     end)
 
     local titleContainer = Instance.new("Frame")
@@ -997,6 +999,8 @@ function UIModule:CreateSection(tab, opts)
         Container = container,
         Window = window,
     }
+    
+    -- FIXED LINE 475: window, container, ... (removed invalid '<>')
     setmetatable(sectionObj, {
         __index = function(t, k)
             if UIModule[k] then
