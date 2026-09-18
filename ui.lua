@@ -1,6 +1,6 @@
 -- ==============================================================================
---              XYRAX HUB - ETHEREAL AURORA EDITION (NEXT-GEN UI)
---                 (Modern Glassmorphism, Floating Dock & Gradients)
+--              XYRAX HUB - NOIR EDITION (BLACK, WHITE & GRAY)
+--           (Fixed Close Icon, True-Aligned FPS Pill, Modern Dock)
 -- ==============================================================================
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -10,25 +10,25 @@ local HttpService = game:GetService("HttpService")
 local UIModule = {}
 UIModule.__index = UIModule
 
--- ==================== COLOR PALETTE & LUXURY STYLING ====================
+-- ==================== NOIR LUXE PALETTE (BLACK / WHITE / GRAY) ====================
 local THEME = {
-    Canvas       = Color3.fromRGB(13, 12, 19),      -- Deep midnight obsidian
-    CardBg       = Color3.fromRGB(20, 18, 29),      -- Soft glass velvet
-    CardElevated = Color3.fromRGB(26, 23, 38),      -- Elevated component surface
-    InputBg      = Color3.fromRGB(16, 14, 24),      -- Recessed field backdrop
+    Canvas       = Color3.fromRGB(12, 12, 14),      -- Deep Onyx
+    CardBg       = Color3.fromRGB(18, 18, 22),      -- Smoked Glass
+    CardElevated = Color3.fromRGB(25, 25, 31),      -- Elevated Charcoal
+    InputBg      = Color3.fromRGB(14, 14, 17),      -- Recessed Slate
     
-    -- Twilight Aurora Gradients
-    GradientA    = Color3.fromRGB(255, 94, 126),    -- Sunset Coral
-    GradientB    = Color3.fromRGB(158, 70, 255),    -- Electric Orchid
-    GradientC    = Color3.fromRGB(64, 196, 255),    -- Cyan Spark
+    -- Platinum & Chrome Metallic Gradients
+    GradientA    = Color3.fromRGB(255, 255, 255),    -- Pure Platinum
+    GradientB    = Color3.fromRGB(170, 170, 185),    -- Brushed Silver
+    GradientC    = Color3.fromRGB(90, 90, 105),      -- Dark Steel
     
-    BorderLight  = Color3.fromRGB(60, 52, 80),      -- Specular edge highlight
-    BorderMuted  = Color3.fromRGB(36, 32, 50),      -- Subtle perimeter stroke
+    BorderLight  = Color3.fromRGB(65, 65, 80),      -- Specular Edge
+    BorderMuted  = Color3.fromRGB(36, 36, 46),      -- Subtle Perimeter Stroke
     
-    TextHero     = Color3.fromRGB(255, 255, 255),
-    TextBody     = Color3.fromRGB(220, 215, 235),
-    TextMuted    = Color3.fromRGB(140, 134, 160),
-    TextDim      = Color3.fromRGB(95, 90, 115),
+    TextHero     = Color3.fromRGB(255, 255, 255),    -- Pure White
+    TextBody     = Color3.fromRGB(215, 215, 225),    -- Light Silver
+    TextMuted    = Color3.fromRGB(135, 135, 150),    -- Neutral Gray
+    TextDim      = Color3.fromRGB(80, 80, 95),       -- Dark Slate
 }
 
 -- ==================== VERIFIED ICON MATRIX ====================
@@ -129,7 +129,7 @@ function UIModule.new(config)
     local self = setmetatable({}, UIModule)
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "XyraxAurora_" .. tostring(math.random(1000, 9999))
+    screenGui.Name = "XyraxNoir_" .. tostring(math.random(1000, 9999))
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -148,7 +148,7 @@ function UIModule.new(config)
     end
     self.ScreenGui = screenGui
 
-    -- Ambient Floating Notifications
+    -- Ambient Notifications Container
     local notifContainer = Instance.new("Frame")
     notifContainer.Name = "Notifs"
     notifContainer.Size = UDim2.new(0, 320, 1, -50)
@@ -162,9 +162,9 @@ function UIModule.new(config)
     notifLayout.Parent = notifContainer
     self.NotifContainer = notifContainer
 
-    -- Main Floating Window Shell
+    -- Main Shell
     local main = Instance.new("Frame")
-    main.Name = "AuroraWindow"
+    main.Name = "NoirWindow"
     main.Size = config.Size or UDim2.new(0, 780, 0, 520)
     main.Position = UDim2.new(0.5, -390, 0.5, -260)
     main.BackgroundColor3 = THEME.Canvas
@@ -175,38 +175,23 @@ function UIModule.new(config)
     self.MainFrame = main
 
     local mainCorner = Instance.new("UICorner")
-    mainCorner.CornerRadius = UDim.new(0, 20)
+    mainCorner.CornerRadius = UDim.new(0, 18)
     mainCorner.Parent = main
 
-    -- Edge Catch-Light Stroke
+    -- Brushed Silver Edge Stroke
     local mainStroke = Instance.new("UIStroke")
     mainStroke.Color = THEME.BorderLight
-    mainStroke.Thickness = 1.4
+    mainStroke.Thickness = 1.2
     mainStroke.Parent = main
 
     local strokeGrad = Instance.new("UIGradient")
     strokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.0, THEME.GradientA),
-        ColorSequenceKeypoint.new(0.5, THEME.GradientB),
-        ColorSequenceKeypoint.new(1.0, THEME.GradientC)
+        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(220, 220, 235)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 50, 60)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(150, 150, 165))
     })
     strokeGrad.Rotation = 45
     strokeGrad.Parent = mainStroke
-
-    -- Ambient Interior Glow Spot
-    local glowSpot = Instance.new("Frame")
-    glowSpot.Name = "GlowAmbient"
-    glowSpot.Size = UDim2.new(0, 450, 0, 250)
-    glowSpot.Position = UDim2.new(0.5, -225, 0, -120)
-    glowSpot.BackgroundColor3 = THEME.GradientB
-    glowSpot.BackgroundTransparency = 0.88
-    glowSpot.BorderSizePixel = 0
-    glowSpot.ZIndex = 1
-    glowSpot.Parent = main
-
-    local glowCorner = Instance.new("UICorner")
-    glowCorner.CornerRadius = UDim.new(1, 0)
-    glowCorner.Parent = glowSpot
 
     -- ==================== MODERN HEADER ISLAND ====================
     local header = Instance.new("Frame")
@@ -217,27 +202,22 @@ function UIModule.new(config)
     header.ZIndex = 2
     header.Parent = main
 
-    -- Monogram Brand Chip
+    -- Monogram Monolith Chip
     local brandChip = Instance.new("Frame")
     brandChip.Size = UDim2.new(0, 32, 0, 32)
     brandChip.Position = UDim2.new(0, 20, 0.5, -16)
-    brandChip.BackgroundColor3 = THEME.CardElevated
+    brandChip.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
     brandChip.BorderSizePixel = 0
     brandChip.Parent = header
 
     local chipCorner = Instance.new("UICorner")
-    chipCorner.CornerRadius = UDim.new(0, 10)
+    chipCorner.CornerRadius = UDim.new(0, 8)
     chipCorner.Parent = brandChip
-
-    local chipStroke = Instance.new("UIStroke")
-    chipStroke.Color = THEME.BorderLight
-    chipStroke.Thickness = 1
-    chipStroke.Parent = brandChip
 
     local chipGrad = Instance.new("UIGradient")
     chipGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 160, 175))
     })
     chipGrad.Rotation = 45
     chipGrad.Parent = brandChip
@@ -247,11 +227,11 @@ function UIModule.new(config)
     chipText.BackgroundTransparency = 1
     chipText.Text = string.sub(config.Title or "X", 1, 1)
     chipText.Font = Enum.Font.GothamBold
-    chipText.TextSize = 15
-    chipText.TextColor3 = THEME.TextHero
+    chipText.TextSize = 14
+    chipText.TextColor3 = Color3.fromRGB(14, 14, 18)
     chipText.Parent = brandChip
 
-    -- Brand Titles
+    -- Brand Labels
     local brandTextHolder = Instance.new("Frame")
     brandTextHolder.Size = UDim2.new(0, 180, 1, 0)
     brandTextHolder.Position = UDim2.new(0, 60, 0, 0)
@@ -277,22 +257,25 @@ function UIModule.new(config)
         subLbl.Text = string.upper(config.Subtitle)
         subLbl.Font = Enum.Font.GothamBold
         subLbl.TextSize = 9
-        subLbl.TextColor3 = THEME.GradientA
+        subLbl.TextColor3 = THEME.TextMuted
         subLbl.TextXAlignment = Enum.TextXAlignment.Left
         subLbl.Parent = brandTextHolder
     end
 
-    -- Header Controls: Status Chip, Minimize, Close
+    -- ==================== HEADER CONTROLS (ALIGNED) ====================
     local controls = Instance.new("Frame")
     controls.Size = UDim2.new(0, 220, 1, 0)
-    controls.Position = UDim2.new(1, -230, 0, 0)
+    controls.Position = UDim2.new(1, -235, 0, 0)
     controls.BackgroundTransparency = 1
     controls.Parent = header
 
-    -- Live Pulse Status Chip (FPS / Studio Health)
+    -- Perfectly Centered & Aligned FPS Pill
     local statusPill = Instance.new("Frame")
-    statusPill.Size = UDim2.new(0, 95, 0, 26)
-    statusPill.Position = UDim2.new(0, 20, 0.5, -13)
+    statusPill.Name = "StatusPill"
+    statusPill.AnchorPoint = Vector2.new(0, 0.5)
+    statusPill.Position = UDim2.new(0, 30, 0.5, 0)
+    statusPill.Size = UDim2.new(0, 0, 0, 26)
+    statusPill.AutomaticSize = Enum.AutomaticSize.X
     statusPill.BackgroundColor3 = THEME.CardBg
     statusPill.BorderSizePixel = 0
     statusPill.Parent = controls
@@ -303,12 +286,24 @@ function UIModule.new(config)
 
     local spStroke = Instance.new("UIStroke")
     spStroke.Color = THEME.BorderMuted
+    spStroke.Thickness = 1
     spStroke.Parent = statusPill
 
+    local spLayout = Instance.new("UIListLayout")
+    spLayout.FillDirection = Enum.FillDirection.Horizontal
+    spLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    spLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    spLayout.Padding = UDim.new(0, 6)
+    spLayout.Parent = statusPill
+
+    local spPad = Instance.new("UIPadding")
+    spPad.PaddingLeft = UDim.new(0, 10)
+    spPad.PaddingRight = UDim.new(0, 12)
+    spPad.Parent = statusPill
+
     local pulseDot = Instance.new("Frame")
-    pulseDot.Size = UDim2.new(0, 7, 0, 7)
-    pulseDot.Position = UDim2.new(0, 10, 0.5, -3)
-    pulseDot.BackgroundColor3 = Color3.fromRGB(52, 211, 153)
+    pulseDot.Size = UDim2.new(0, 6, 0, 6)
+    pulseDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     pulseDot.BorderSizePixel = 0
     pulseDot.Parent = statusPill
 
@@ -317,14 +312,14 @@ function UIModule.new(config)
     pdCorner.Parent = pulseDot
 
     local fpsLbl = Instance.new("TextLabel")
-    fpsLbl.Size = UDim2.new(1, -25, 1, 0)
-    fpsLbl.Position = UDim2.new(0, 22, 0, 0)
+    fpsLbl.Size = UDim2.new(0, 0, 1, 0)
+    fpsLbl.AutomaticSize = Enum.AutomaticSize.X
     fpsLbl.BackgroundTransparency = 1
     fpsLbl.Text = "60 FPS"
     fpsLbl.Font = Enum.Font.GothamBold
     fpsLbl.TextSize = 10
-    fpsLbl.TextColor3 = THEME.TextMuted
-    fpsLbl.TextXAlignment = Enum.TextXAlignment.Left
+    fpsLbl.TextColor3 = THEME.TextBody
+    fpsLbl.TextYAlignment = Enum.TextYAlignment.Center
     fpsLbl.Parent = statusPill
 
     -- FPS Counter Heartbeat
@@ -341,7 +336,7 @@ function UIModule.new(config)
     -- Window Minimize Button
     local minBtn = Instance.new("TextButton")
     minBtn.Size = UDim2.new(0, 26, 0, 26)
-    minBtn.Position = UDim2.new(1, -72, 0.5, -13)
+    minBtn.Position = UDim2.new(1, -66, 0.5, -13)
     minBtn.BackgroundColor3 = THEME.CardBg
     minBtn.BorderSizePixel = 0
     minBtn.Text = "—"
@@ -352,65 +347,77 @@ function UIModule.new(config)
     minBtn.Parent = controls
 
     local minCorner = Instance.new("UICorner")
-    minCorner.CornerRadius = UDim.new(0, 8)
+    minCorner.CornerRadius = UDim.new(0, 7)
     minCorner.Parent = minBtn
 
     local minStroke = Instance.new("UIStroke")
     minStroke.Color = THEME.BorderMuted
     minStroke.Parent = minBtn
 
-    -- Window Close Button
+    -- ==================== TRUE "X" CLOSE BUTTON ====================
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 26, 0, 26)
-    closeBtn.Position = UDim2.new(1, -38, 0.5, -13)
+    closeBtn.Position = UDim2.new(1, -32, 0.5, -13)
     closeBtn.BackgroundColor3 = THEME.CardBg
     closeBtn.BorderSizePixel = 0
-    closeBtn.Text = "✕"
-    closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.TextSize = 11
-    closeBtn.TextColor3 = THEME.TextMuted
+    closeBtn.Text = ""
     closeBtn.AutoButtonColor = false
     closeBtn.Parent = controls
 
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.CornerRadius = UDim.new(0, 7)
     closeCorner.Parent = closeBtn
 
     local closeStroke = Instance.new("UIStroke")
     closeStroke.Color = THEME.BorderMuted
     closeStroke.Parent = closeBtn
 
-    -- Control Button Hover Animations
+    -- Pixel-Perfect Lucide "X" Icon (Sharp, Centered, Scaled)
+    local closeIcon = Instance.new("ImageLabel")
+    closeIcon.Size = UDim2.new(0, 13, 0, 13)
+    closeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    closeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    closeIcon.BackgroundTransparency = 1
+    closeIcon.Image = "rbxassetid://110786993356448"
+    closeIcon.ImageColor3 = THEME.TextMuted
+    closeIcon.Parent = closeBtn
+
+    -- Button Hover Micro-Interactions
     minBtn.MouseEnter:Connect(function()
         TweenService:Create(minBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardElevated, TextColor3 = THEME.TextHero }):Play()
+        TweenService:Create(minStroke, TweenInfo.new(0.2), { Color = THEME.BorderLight }):Play()
     end)
     minBtn.MouseLeave:Connect(function()
         TweenService:Create(minBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardBg, TextColor3 = THEME.TextMuted }):Play()
-    end)
-    closeBtn.MouseEnter:Connect(function()
-        TweenService:Create(closeBtn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(80, 25, 35), TextColor3 = Color3.fromRGB(255, 100, 120) }):Play()
-        TweenService:Create(closeStroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(180, 40, 60) }):Play()
-    end)
-    closeBtn.MouseLeave:Connect(function()
-        TweenService:Create(closeBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardBg, TextColor3 = THEME.TextMuted }):Play()
-        TweenService:Create(closeStroke, TweenInfo.new(0.2), { Color = THEME.BorderMuted }):Play()
+        TweenService:Create(minStroke, TweenInfo.new(0.2), { Color = THEME.BorderMuted }):Play()
     end)
 
-    -- Minimize Action
+    closeBtn.MouseEnter:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(38, 38, 46) }):Play()
+        TweenService:Create(closeStroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(140, 140, 155) }):Play()
+        TweenService:Create(closeIcon, TweenInfo.new(0.2), { ImageColor3 = Color3.fromRGB(255, 255, 255) }):Play()
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardBg }):Play()
+        TweenService:Create(closeStroke, TweenInfo.new(0.2), { Color = THEME.BorderMuted }):Play()
+        TweenService:Create(closeIcon, TweenInfo.new(0.2), { ImageColor3 = THEME.TextMuted }):Play()
+    end)
+
+    -- Window Minimize
     local isMin, origSize = false, main.Size
     minBtn.MouseButton1Click:Connect(function()
         isMin = not isMin
         if isMin then
             origSize = main.Size
-            TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Quart), { Size = UDim2.new(origSize.X.Scale, origSize.X.Offset, 0, 56) }):Play()
+            TweenService:Create(main, TweenInfo.new(0.32, Enum.EasingStyle.Quart), { Size = UDim2.new(origSize.X.Scale, origSize.X.Offset, 0, 56) }):Play()
         else
-            TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Quart), { Size = origSize }):Play()
+            TweenService:Create(main, TweenInfo.new(0.32, Enum.EasingStyle.Quart), { Size = origSize }):Play()
         end
     end)
 
-    -- Close Action
+    -- Window Close
     closeBtn.MouseButton1Click:Connect(function()
-        local tw = TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        local tw = TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
             Size = UDim2.new(0, 0, 0, 0),
             Position = UDim2.new(main.Position.X.Scale, main.Position.X.Offset + (main.Size.X.Offset/2), main.Position.Y.Scale, main.Position.Y.Offset + (main.Size.Y.Offset/2))
         })
@@ -420,7 +427,7 @@ function UIModule.new(config)
         end)
     end)
 
-    -- Dragging Logic
+    -- Draggable Handling
     local dragging, dragStart, startPos, dragConn
     header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -485,7 +492,7 @@ function UIModule.new(config)
         end
     end)
 
-    -- ==================== FLOATING DOCK NAVIGATION (HORIZONTAL) ====================
+    -- ==================== FLOATING DOCK (TOP ISLAND) ====================
     local navRibbon = Instance.new("Frame")
     navRibbon.Name = "NavRibbon"
     navRibbon.Size = UDim2.new(1, -40, 0, 42)
@@ -496,7 +503,7 @@ function UIModule.new(config)
     navRibbon.Parent = main
 
     local navCorner = Instance.new("UICorner")
-    navCorner.CornerRadius = UDim.new(0, 14)
+    navCorner.CornerRadius = UDim.new(0, 12)
     navCorner.Parent = navRibbon
 
     local navStroke = Instance.new("UIStroke")
@@ -504,7 +511,7 @@ function UIModule.new(config)
     navStroke.Thickness = 1
     navStroke.Parent = navRibbon
 
-    -- Active Gliding Pill (Slides smoothly beneath the active tab)
+    -- Active Gliding Highlight Pill
     local glidePill = Instance.new("Frame")
     glidePill.Name = "GlideIndicator"
     glidePill.Size = UDim2.new(0, 100, 0, 32)
@@ -516,21 +523,13 @@ function UIModule.new(config)
     glidePill.Parent = navRibbon
 
     local gpCorner = Instance.new("UICorner")
-    gpCorner.CornerRadius = UDim.new(0, 10)
+    gpCorner.CornerRadius = UDim.new(0, 9)
     gpCorner.Parent = glidePill
 
     local gpStroke = Instance.new("UIStroke")
     gpStroke.Color = THEME.BorderLight
     gpStroke.Thickness = 1
     gpStroke.Parent = glidePill
-
-    local gpGrad = Instance.new("UIGradient")
-    gpGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
-    })
-    gpGrad.Rotation = 45
-    gpGrad.Parent = gpStroke
 
     local navScroll = Instance.new("ScrollingFrame")
     navScroll.Name = "NavItems"
@@ -570,7 +569,7 @@ function UIModule.new(config)
     return self
 end
 
--- ==================== NOTIFICATIONS (GLASS CAPSULE) ====================
+-- ==================== NOTIFICATIONS ====================
 function UIModule:Notify(config)
     config = config or {}
     local duration = config.Duration or 3.5
@@ -583,21 +582,13 @@ function UIModule:Notify(config)
     pill.Parent = self.NotifContainer
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 14)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = pill
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = THEME.BorderLight
-    stroke.Thickness = 1.2
+    stroke.Thickness = 1
     stroke.Parent = pill
-
-    local strokeGrad = Instance.new("UIGradient")
-    strokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
-    })
-    strokeGrad.Rotation = 45
-    strokeGrad.Parent = stroke
 
     local tLbl = Instance.new("TextLabel")
     tLbl.Size = UDim2.new(1, -28, 0, 18)
@@ -624,16 +615,9 @@ function UIModule:Notify(config)
     local bar = Instance.new("Frame")
     bar.Size = UDim2.new(1, 0, 0, 2)
     bar.Position = UDim2.new(0, 0, 1, -2)
-    bar.BackgroundColor3 = THEME.GradientA
+    bar.BackgroundColor3 = Color3.fromRGB(240, 240, 250)
     bar.BorderSizePixel = 0
     bar.Parent = pill
-
-    local bGrad = Instance.new("UIGradient")
-    bGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
-    })
-    bGrad.Parent = bar
 
     TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
     task.delay(duration, function()
@@ -643,7 +627,7 @@ function UIModule:Notify(config)
     end)
 end
 
--- ==================== TAB SYSTEM (TOP PILL DOCK) ====================
+-- ==================== TAB CREATION ====================
 function UIModule:CreateTab(name, iconName)
     local tabBtn = Instance.new("TextButton")
     tabBtn.Name = "Nav_" .. name
@@ -687,7 +671,6 @@ function UIModule:CreateTab(name, iconName)
     label.TextColor3 = THEME.TextMuted
     label.Parent = tabBtn
 
-    -- 2-Column Responsive Page Frame
     local page = Instance.new("ScrollingFrame")
     page.Name = "Page_" .. name
     page.Size = UDim2.new(1, 0, 1, 0)
@@ -730,7 +713,6 @@ function UIModule:CreateTab(name, iconName)
         tabData.Page.Visible = true
         self.GlidePill.Visible = true
 
-        -- Animate Gliding Pill
         task.defer(function()
             local targetX = tabBtn.AbsolutePosition.X - self.NavScroll.AbsolutePosition.X + self.NavScroll.CanvasPosition.X
             local targetW = tabBtn.AbsoluteSize.X
@@ -742,7 +724,7 @@ function UIModule:CreateTab(name, iconName)
 
         TweenService:Create(label, TweenInfo.new(0.25), { TextColor3 = THEME.TextHero }):Play()
         if iconData then
-            TweenService:Create(icon, TweenInfo.new(0.25), { ImageColor3 = THEME.GradientA }):Play()
+            TweenService:Create(icon, TweenInfo.new(0.25), { ImageColor3 = THEME.TextHero }):Play()
         end
         self.ActiveTab = tabData
     end
@@ -757,7 +739,7 @@ function UIModule:CreateTab(name, iconName)
     return tabData
 end
 
--- ==================== GLAMOROUS SECTION CARD ====================
+-- ==================== SECTION CARD ====================
 function UIModule:CreateSection(tab, config)
     config = config or {}
     local page = (type(tab) == "table" and tab.Page) or tab
@@ -770,7 +752,7 @@ function UIModule:CreateSection(tab, config)
     card.Parent = page
 
     local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 14)
+    cardCorner.CornerRadius = UDim.new(0, 12)
     cardCorner.Parent = card
 
     local cardStroke = Instance.new("UIStroke")
@@ -790,21 +772,21 @@ function UIModule:CreateSection(tab, config)
     cardPad.Parent = card
 
     if config.Title then
-        local header = Instance.new("Frame")
-        header.Size = UDim2.new(1, 0, 0, 24)
-        header.BackgroundTransparency = 1
-        header.Parent = card
+        local hdr = Instance.new("Frame")
+        hdr.Size = UDim2.new(1, 0, 0, 24)
+        hdr.BackgroundTransparency = 1
+        hdr.Parent = card
 
         local headerIcon = Instance.new("ImageLabel")
         headerIcon.Size = UDim2.new(0, 16, 0, 16)
         headerIcon.Position = UDim2.new(0, 0, 0.5, -8)
         headerIcon.BackgroundTransparency = 1
-        headerIcon.Parent = header
+        headerIcon.Parent = hdr
 
         local iconData = self:GetIcon(config.Icon)
         local hOffset = 0
         if iconData then
-            applyIcon(headerIcon, iconData, THEME.GradientA)
+            applyIcon(headerIcon, iconData, THEME.TextHero)
             hOffset = 24
         else
             headerIcon.Visible = false
@@ -819,7 +801,7 @@ function UIModule:CreateSection(tab, config)
         titleLbl.TextSize = 11
         titleLbl.TextColor3 = THEME.TextHero
         titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-        titleLbl.Parent = header
+        titleLbl.Parent = hdr
     end
 
     cardLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -829,7 +811,7 @@ function UIModule:CreateSection(tab, config)
     return card
 end
 
--- ==================== WIDGET: MODERN BUTTON ====================
+-- ==================== WIDGET: BUTTON ====================
 function UIModule:CreateButton(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -843,7 +825,7 @@ function UIModule:CreateButton(parent, config)
     btn.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = btn
 
     local stroke = Instance.new("UIStroke")
@@ -860,7 +842,7 @@ function UIModule:CreateButton(parent, config)
     local iconData = self:GetIcon(config.Icon)
     local offset = 14
     if iconData then
-        applyIcon(icon, iconData, THEME.GradientA)
+        applyIcon(icon, iconData, THEME.TextHero)
         offset = 40
     else
         icon.Visible = false
@@ -890,9 +872,8 @@ function UIModule:CreateButton(parent, config)
         descLbl.Parent = btn
     end
 
-    -- Interactive Gradient Sweep on Hover
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(34, 30, 48) }):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(34, 34, 42) }):Play()
         TweenService:Create(stroke, TweenInfo.new(0.2), { Color = THEME.BorderLight }):Play()
     end)
     btn.MouseLeave:Connect(function()
@@ -910,7 +891,7 @@ function UIModule:CreateButton(parent, config)
     return btn
 end
 
--- ==================== WIDGET: AURORA TOGGLE ====================
+-- ==================== WIDGET: MONOCHROME TOGGLE ====================
 function UIModule:CreateToggle(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -925,7 +906,7 @@ function UIModule:CreateToggle(parent, config)
     row.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = row
 
     local stroke = Instance.new("UIStroke")
@@ -957,11 +938,10 @@ function UIModule:CreateToggle(parent, config)
         descLbl.Parent = row
     end
 
-    -- Modern Switch Pill
     local pill = Instance.new("Frame")
     pill.Size = UDim2.new(0, 42, 0, 22)
     pill.Position = UDim2.new(1, -56, 0.5, -11)
-    pill.BackgroundColor3 = state and THEME.GradientB or Color3.fromRGB(35, 30, 46)
+    pill.BackgroundColor3 = state and Color3.fromRGB(240, 240, 250) or Color3.fromRGB(36, 36, 46)
     pill.BorderSizePixel = 0
     pill.Parent = row
 
@@ -969,18 +949,10 @@ function UIModule:CreateToggle(parent, config)
     pillCorner.CornerRadius = UDim.new(1, 0)
     pillCorner.Parent = pill
 
-    local pillGrad = Instance.new("UIGradient")
-    pillGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
-    })
-    pillGrad.Enabled = state
-    pillGrad.Parent = pill
-
     local knob = Instance.new("Frame")
     knob.Size = UDim2.new(0, 16, 0, 16)
     knob.Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.BackgroundColor3 = state and Color3.fromRGB(15, 15, 20) or Color3.fromRGB(180, 180, 190)
     knob.BorderSizePixel = 0
     knob.Parent = pill
 
@@ -990,12 +962,15 @@ function UIModule:CreateToggle(parent, config)
 
     local function update(val)
         state = val
-        pillGrad.Enabled = state
-        local targetColor = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(35, 30, 46)
-        local targetPos = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+        local targetPill = state and Color3.fromRGB(240, 240, 250) or Color3.fromRGB(36, 36, 46)
+        local targetKnobPos = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+        local targetKnobColor = state and Color3.fromRGB(15, 15, 20) or Color3.fromRGB(180, 180, 190)
 
-        TweenService:Create(pill, TweenInfo.new(0.24, Enum.EasingStyle.Quart), { BackgroundColor3 = targetColor }):Play()
-        TweenService:Create(knob, TweenInfo.new(0.24, Enum.EasingStyle.Quart), { Position = targetPos }):Play()
+        TweenService:Create(pill, TweenInfo.new(0.22, Enum.EasingStyle.Quart), { BackgroundColor3 = targetPill }):Play()
+        TweenService:Create(knob, TweenInfo.new(0.22, Enum.EasingStyle.Quart), {
+            Position = targetKnobPos,
+            BackgroundColor3 = targetKnobColor
+        }):Play()
 
         if config.Callback then task.spawn(config.Callback, state) end
     end
@@ -1008,7 +983,7 @@ function UIModule:CreateToggle(parent, config)
     }
 end
 
--- ==================== WIDGET: SLIDER WITH LIVE GLOW ====================
+-- ==================== WIDGET: SLIDER ====================
 function UIModule:CreateSlider(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -1027,7 +1002,7 @@ function UIModule:CreateSlider(parent, config)
     row.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = row
 
     local stroke = Instance.new("UIStroke")
@@ -1053,14 +1028,14 @@ function UIModule:CreateSlider(parent, config)
     valLbl.Text = tostring(val) .. suffix
     valLbl.Font = Enum.Font.GothamBold
     valLbl.TextSize = 11
-    valLbl.TextColor3 = THEME.GradientA
+    valLbl.TextColor3 = THEME.TextHero
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
     valLbl.Parent = row
 
     local track = Instance.new("Frame")
-    track.Size = UDim2.new(1, -28, 0, 5)
-    track.Position = UDim2.new(0, 14, 0, 35)
-    track.BackgroundColor3 = Color3.fromRGB(36, 31, 48)
+    track.Size = UDim2.new(1, -28, 0, 4)
+    track.Position = UDim2.new(0, 14, 0, 36)
+    track.BackgroundColor3 = Color3.fromRGB(38, 38, 48)
     track.BorderSizePixel = 0
     track.Parent = row
 
@@ -1071,20 +1046,13 @@ function UIModule:CreateSlider(parent, config)
     local fill = Instance.new("Frame")
     local ratio = math.clamp((val - min) / (max - min), 0, 1)
     fill.Size = UDim2.new(ratio, 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    fill.BackgroundColor3 = Color3.fromRGB(245, 245, 255)
     fill.BorderSizePixel = 0
     fill.Parent = track
 
     local fillCorner = Instance.new("UICorner")
     fillCorner.CornerRadius = UDim.new(1, 0)
     fillCorner.Parent = fill
-
-    local fillGrad = Instance.new("UIGradient")
-    fillGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
-    })
-    fillGrad.Parent = fill
 
     local dragging = false
     local function update(input)
@@ -1128,7 +1096,7 @@ function UIModule:CreateSlider(parent, config)
     }
 end
 
--- ==================== WIDGET: MODERN DROPDOWN ====================
+-- ==================== WIDGET: DROPDOWN ====================
 function UIModule:CreateDropdown(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -1144,7 +1112,7 @@ function UIModule:CreateDropdown(parent, config)
     holder.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = holder
 
     local stroke = Instance.new("UIStroke")
@@ -1177,7 +1145,7 @@ function UIModule:CreateDropdown(parent, config)
     selLbl.Text = selected
     selLbl.Font = Enum.Font.Gotham
     selLbl.TextSize = 11
-    selLbl.TextColor3 = THEME.GradientA
+    selLbl.TextColor3 = THEME.TextBody
     selLbl.TextXAlignment = Enum.TextXAlignment.Right
     selLbl.Parent = header
 
@@ -1202,8 +1170,8 @@ function UIModule:CreateDropdown(parent, config)
 
     local function refresh()
         local targetH = open and (42 + #options * 30 + 6) or 42
-        TweenService:Create(holder, TweenInfo.new(0.26, Enum.EasingStyle.Quart), { Size = UDim2.new(1, 0, 0, targetH) }):Play()
-        TweenService:Create(arrow, TweenInfo.new(0.26), { Rotation = open and 180 or 0 }):Play()
+        TweenService:Create(holder, TweenInfo.new(0.24, Enum.EasingStyle.Quart), { Size = UDim2.new(1, 0, 0, targetH) }):Play()
+        TweenService:Create(arrow, TweenInfo.new(0.24), { Rotation = open and 180 or 0 }):Play()
         TweenService:Create(stroke, TweenInfo.new(0.2), { Color = open and THEME.BorderLight or THEME.BorderMuted }):Play()
     end
 
@@ -1214,7 +1182,7 @@ function UIModule:CreateDropdown(parent, config)
         obtn.Text = "     " .. opt
         obtn.Font = Enum.Font.Gotham
         obtn.TextSize = 11
-        obtn.TextColor3 = (opt == selected) and THEME.GradientA or THEME.TextMuted
+        obtn.TextColor3 = (opt == selected) and THEME.TextHero or THEME.TextMuted
         obtn.TextXAlignment = Enum.TextXAlignment.Left
         obtn.Parent = optList
 
@@ -1225,7 +1193,7 @@ function UIModule:CreateDropdown(parent, config)
             refresh()
             for _, child in ipairs(optList:GetChildren()) do
                 if child:IsA("TextButton") then
-                    child.TextColor3 = (child.Text == "     " .. selected) and THEME.GradientA or THEME.TextMuted
+                    child.TextColor3 = (child.Text == "     " .. selected) and THEME.TextHero or THEME.TextMuted
                 end
             end
             if config.Callback then task.spawn(config.Callback, selected) end
@@ -1247,7 +1215,7 @@ function UIModule:CreateDropdown(parent, config)
     }
 end
 
--- ==================== WIDGET: MODERN TEXT INPUT ====================
+-- ==================== WIDGET: INPUT ====================
 function UIModule:CreateInput(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -1259,7 +1227,7 @@ function UIModule:CreateInput(parent, config)
     row.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = row
 
     local stroke = Instance.new("UIStroke")
@@ -1293,7 +1261,7 @@ function UIModule:CreateInput(parent, config)
     tb.Parent = row
 
     local tbCorner = Instance.new("UICorner")
-    tbCorner.CornerRadius = UDim.new(0, 8)
+    tbCorner.CornerRadius = UDim.new(0, 6)
     tbCorner.Parent = tb
 
     local tbStroke = Instance.new("UIStroke")
@@ -1302,7 +1270,7 @@ function UIModule:CreateInput(parent, config)
     tbStroke.Parent = tb
 
     tb.Focused:Connect(function()
-        TweenService:Create(tbStroke, TweenInfo.new(0.2), { Color = THEME.GradientB }):Play()
+        TweenService:Create(tbStroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(180, 180, 200) }):Play()
     end)
     tb.FocusLost:Connect(function(enter)
         TweenService:Create(tbStroke, TweenInfo.new(0.2), { Color = THEME.BorderMuted }):Play()
@@ -1330,7 +1298,7 @@ function UIModule:CreateCheckbox(parent, config)
     row.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = row
 
     local stroke = Instance.new("UIStroke")
@@ -1341,12 +1309,12 @@ function UIModule:CreateCheckbox(parent, config)
     local box = Instance.new("Frame")
     box.Size = UDim2.new(0, 18, 0, 18)
     box.Position = UDim2.new(0, 14, 0.5, -9)
-    box.BackgroundColor3 = checked and THEME.GradientA or Color3.fromRGB(36, 31, 48)
+    box.BackgroundColor3 = checked and Color3.fromRGB(240, 240, 250) or Color3.fromRGB(34, 34, 44)
     box.BorderSizePixel = 0
     box.Parent = row
 
     local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 6)
+    boxCorner.CornerRadius = UDim.new(0, 5)
     boxCorner.Parent = box
 
     local checkmark = Instance.new("TextLabel")
@@ -1355,7 +1323,7 @@ function UIModule:CreateCheckbox(parent, config)
     checkmark.Text = "✓"
     checkmark.Font = Enum.Font.GothamBold
     checkmark.TextSize = 11
-    checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkmark.TextColor3 = Color3.fromRGB(15, 15, 20)
     checkmark.Visible = checked
     checkmark.Parent = box
 
@@ -1374,7 +1342,7 @@ function UIModule:CreateCheckbox(parent, config)
         checked = val
         checkmark.Visible = checked
         TweenService:Create(box, TweenInfo.new(0.2), {
-            BackgroundColor3 = checked and THEME.GradientA or Color3.fromRGB(36, 31, 48)
+            BackgroundColor3 = checked and Color3.fromRGB(240, 240, 250) or Color3.fromRGB(34, 34, 44)
         }):Play()
         if config.Callback then task.spawn(config.Callback, checked) end
     end
@@ -1401,7 +1369,7 @@ function UIModule:CreateAdjustmentPicker(parent, config)
     btn.Parent = container
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = btn
 
     local stroke = Instance.new("UIStroke")
@@ -1421,7 +1389,7 @@ function UIModule:CreateAdjustmentPicker(parent, config)
     titleLbl.Parent = btn
 
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(34, 30, 48) }):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(34, 34, 42) }):Play()
         TweenService:Create(stroke, TweenInfo.new(0.2), { Color = THEME.BorderLight }):Play()
     end)
     btn.MouseLeave:Connect(function()
@@ -1450,7 +1418,7 @@ function UIModule:OpenMultiSelectWindow(config)
     local overlay = Instance.new("TextButton")
     overlay.Size = UDim2.new(1, 0, 1, 0)
     overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    overlay.BackgroundTransparency = 0.5
+    overlay.BackgroundTransparency = 0.55
     overlay.Text = ""
     overlay.AutoButtonColor = false
     overlay.Parent = screenGui
@@ -1463,7 +1431,7 @@ function UIModule:OpenMultiSelectWindow(config)
     modal.Parent = overlay
 
     local modalCorner = Instance.new("UICorner")
-    modalCorner.CornerRadius = UDim.new(0, 16)
+    modalCorner.CornerRadius = UDim.new(0, 14)
     modalCorner.Parent = modal
 
     local modalStroke = Instance.new("UIStroke")
@@ -1510,7 +1478,7 @@ function UIModule:OpenMultiSelectWindow(config)
         row.Parent = scroll
 
         local rCorner = Instance.new("UICorner")
-        rCorner.CornerRadius = UDim.new(0, 8)
+        rCorner.CornerRadius = UDim.new(0, 7)
         rCorner.Parent = row
 
         local rStroke = Instance.new("UIStroke")
@@ -1536,7 +1504,7 @@ function UIModule:OpenMultiSelectWindow(config)
         ind.Text = selectedMap[opt] and "✓" or ""
         ind.Font = Enum.Font.GothamBold
         ind.TextSize = 12
-        ind.TextColor3 = THEME.GradientA
+        ind.TextColor3 = THEME.TextHero
         ind.Parent = row
 
         row.MouseButton1Click:Connect(function()
@@ -1553,25 +1521,18 @@ function UIModule:OpenMultiSelectWindow(config)
     local doneBtn = Instance.new("TextButton")
     doneBtn.Size = UDim2.new(1, -28, 0, 36)
     doneBtn.Position = UDim2.new(0, 14, 1, -48)
-    doneBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    doneBtn.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
     doneBtn.BorderSizePixel = 0
     doneBtn.Text = "Confirm Selection"
     doneBtn.Font = Enum.Font.GothamBold
     doneBtn.TextSize = 12
-    doneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    doneBtn.TextColor3 = Color3.fromRGB(15, 15, 20)
     doneBtn.AutoButtonColor = false
     doneBtn.Parent = modal
 
     local doneCorner = Instance.new("UICorner")
-    doneCorner.CornerRadius = UDim.new(0, 10)
+    doneCorner.CornerRadius = UDim.new(0, 8)
     doneCorner.Parent = doneBtn
-
-    local doneGrad = Instance.new("UIGradient")
-    doneGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.GradientA),
-        ColorSequenceKeypoint.new(1, THEME.GradientB)
-    })
-    doneGrad.Parent = doneBtn
 
     doneBtn.MouseButton1Click:Connect(function()
         local result = {}
