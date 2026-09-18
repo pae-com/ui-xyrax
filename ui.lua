@@ -1,8 +1,8 @@
 --[[
-	ReaperX Style UI Library (Full Complete Core)
-	- Top-Right: Logo & Close Button (87463403317153)
+	ReaperX Style UI Library (Fixed Logo & Transparent Close Button)
+	- Top-Right: Auto-Resolving Decal Logo & Transparent Close Button (87463403317153)
 	- Bottom-Right: Corner Drag Resizer (◢)
-	- Popup Window for Multi-Selection & UI Adjustments (No dropdown/icon)
+	- Settings: Multi-Select Popup Window (No dropdown / No icons)
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -31,9 +31,18 @@ local Theme = {
 	Dropdown    = Color3.fromRGB(28, 28, 33),
 }
 
+-- ฟังก์ชันแปลง Decal ID จาก Roblox Store ให้กลายเป็น Image URL ที่แสดงผลได้จริง 100%
+local function GetAssetImage(id)
+	local numId = tostring(id):match("%d+")
+	if not numId then return id end
+
+	-- ใช้ rbxthumb ซึ่งรองรับ Decal ID จาก Creator Store โดยตรง
+	return "rbxthumb://type=Asset&id=" .. numId .. "&w=420&h=420"
+end
+
 UIModule.Icons = {
-	Logo     = "rbxassetid://137660498980177",
-	Close    = "rbxassetid://87463403317153",
+	Logo     = GetAssetImage("137660498980177"),
+	Close    = GetAssetImage("87463403317153"),
 
 	Swords   = "rbxassetid://10747377716",
 	Skull    = "rbxassetid://10747384022",
@@ -161,10 +170,10 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Top-Right Controls (Logo & Close Button)
+	-- ========== TOP-RIGHT (LOGO & CLEAN CLOSE BUTTON) ==========
 	local topRightArea = Create("Frame", {
 		Size = UDim2.new(0, 80, 1, 0),
-		Position = UDim2.new(1, -12, 0, 0),
+		Position = UDim2.new(1, -14, 0, 0),
 		AnchorPoint = Vector2.new(1, 0),
 		BackgroundTransparency = 1,
 		Parent = titleBar,
@@ -173,83 +182,41 @@ function UIModule.new(config)
 		FillDirection = Enum.FillDirection.Horizontal,
 		HorizontalAlignment = Enum.HorizontalAlignment.Right,
 		VerticalAlignment = Enum.VerticalAlignment.Center,
-		Padding = UDim.new(0, 8),
+		Padding = UDim.new(0, 12),
 		Parent = topRightArea,
 	})
 
-	local logoBox = Create("Frame", {
-		Size = UDim2.new(0, 28, 0, 28),
-		BackgroundColor3 = Theme.Section,
-		BorderSizePixel = 0,
-		Parent = topRightArea,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoBox })
-	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = logoBox })
-
-	Create("TextLabel", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1,
-		Text = "RX",
-		TextColor3 = Theme.Accent,
-		Font = Enum.Font.GothamBold,
-		TextSize = 11,
-		ZIndex = 2,
-		Parent = logoBox,
-	})
-
-	Create("ImageLabel", {
-		Size = UDim2.new(1, 0, 1, 0),
+	-- 1. Logo (ไม่มีกล่องทึบ โชว์รูปเต็มพร้อมมุมโค้งมน)
+	local logoImg = Create("ImageLabel", {
+		Name = "HeaderLogo",
+		Size = UDim2.new(0, 26, 0, 26),
 		BackgroundTransparency = 1,
 		Image = Icons.Logo,
 		ScaleType = Enum.ScaleType.Fit,
-		ZIndex = 3,
-		Parent = logoBox,
-	})
-
-	local closeBtn = Create("TextButton", {
-		Size = UDim2.new(0, 28, 0, 28),
-		BackgroundColor3 = Theme.Section,
-		Text = "",
-		AutoButtonColor = false,
 		Parent = topRightArea,
 	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = closeBtn })
-	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = closeBtn })
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoImg })
 
-	local closeImg = Create("ImageLabel", {
-		Size = UDim2.new(0, 14, 0, 14),
-		Position = UDim2.new(0.5, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0.5, 0.5),
+	-- 2. Close Button (โปร่งใส ไม่มีกล่องเหลี่ยม ชี้แล้วเรืองแสงสีแดง)
+	local closeBtn = Create("ImageButton", {
+		Name = "CloseButton",
+		Size = UDim2.new(0, 18, 0, 18),
 		BackgroundTransparency = 1,
 		Image = Icons.Close,
 		ImageColor3 = Theme.TextDim,
 		ScaleType = Enum.ScaleType.Fit,
-		ZIndex = 3,
-		Parent = closeBtn,
-	})
-
-	local closeFallback = Create("TextLabel", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1,
-		Text = "✕",
-		TextColor3 = Theme.TextDim,
-		Font = Enum.Font.GothamBold,
-		TextSize = 13,
-		ZIndex = 2,
-		Parent = closeBtn,
+		Parent = topRightArea,
 	})
 
 	closeBtn.MouseEnter:Connect(function()
-		Tween(closeBtn, { BackgroundColor3 = Theme.AccentDark })
-		Tween(closeImg, { ImageColor3 = Theme.Text })
-		Tween(closeFallback, { TextColor3 = Theme.Text })
+		Tween(closeBtn, { ImageColor3 = Theme.Accent })
 	end)
 	closeBtn.MouseLeave:Connect(function()
-		Tween(closeBtn, { BackgroundColor3 = Theme.Section })
-		Tween(closeImg, { ImageColor3 = Theme.TextDim })
-		Tween(closeFallback, { TextColor3 = Theme.TextDim })
+		Tween(closeBtn, { ImageColor3 = Theme.TextDim })
 	end)
-	closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+	closeBtn.MouseButton1Click:Connect(function()
+		gui:Destroy()
+	end)
 
 	-- Sidebar
 	local sidebar = Create("Frame", {
@@ -330,7 +297,7 @@ function UIModule.new(config)
 		Parent = contentScroll,
 	})
 
-	-- Dragging Logic
+	-- Window Dragging Logic
 	local dragging, dragInput, dragStart, startPos
 	titleBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
