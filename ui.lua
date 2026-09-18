@@ -1,10 +1,8 @@
 --[[
-	ReaperX Hub - Fixed Full System UI
-	- Fixed: Script crash caused by invalid ImageLabel event
-	- Fixed: Window dragging & corner resizing with full touch/mouse support
+	ReaperX Style UI Library (Full Complete Core)
 	- Top-Right: Logo & Close Button (87463403317153)
-	- Settings: Clean UI Adjustment button opening a multi-selection popup window
-	- All System Features: Auto Farm, Raids, Sell, Utilities, and Hub Settings
+	- Bottom-Right: Corner Drag Resizer (◢)
+	- Popup Window for Multi-Selection & UI Adjustments (No dropdown/icon)
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -14,7 +12,6 @@ local Players = game:GetService("Players")
 local UIModule = {}
 UIModule.__index = UIModule
 
--- ====================== THEME & ICONS ======================
 local Theme = {
 	Background  = Color3.fromRGB(15, 15, 17),
 	Sidebar     = Color3.fromRGB(20, 20, 23),
@@ -49,7 +46,6 @@ UIModule.Icons = {
 }
 local Icons = UIModule.Icons
 
--- ====================== HELPERS ======================
 local function Create(class, props)
 	local inst = Instance.new(class)
 	for k, v in pairs(props or {}) do
@@ -80,7 +76,6 @@ local function ApplyGradient(parent, color1, color2)
 	})
 end
 
--- ====================== WINDOW INITIALIZATION ======================
 function UIModule.new(config)
 	config = config or {}
 	local self = setmetatable({}, UIModule)
@@ -118,20 +113,19 @@ function UIModule.new(config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = main })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = main })
 
-	-- Toggle visibility with RightControl
 	UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == (config.ToggleKey or Enum.KeyCode.RightControl) then
 			main.Visible = not main.Visible
 		end
 	end)
 
-	-- ========== TITLE BAR ==========
+	-- Title Bar
 	local titleBar = Create("Frame", {
 		Name = "TitleBar",
 		Size = UDim2.new(1, 0, 0, 52),
 		BackgroundColor3 = Theme.Sidebar,
 		BorderSizePixel = 0,
-		Active = true, -- Crucial for capturing drag events
+		Active = true,
 		Parent = main,
 	})
 
@@ -167,7 +161,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- ========== TOP-RIGHT (LOGO + CLOSE BUTTON) ==========
+	-- Top-Right Controls (Logo & Close Button)
 	local topRightArea = Create("Frame", {
 		Size = UDim2.new(0, 80, 1, 0),
 		Position = UDim2.new(1, -12, 0, 0),
@@ -183,7 +177,6 @@ function UIModule.new(config)
 		Parent = topRightArea,
 	})
 
-	-- 1. Logo Box
 	local logoBox = Create("Frame", {
 		Size = UDim2.new(0, 28, 0, 28),
 		BackgroundColor3 = Theme.Section,
@@ -213,7 +206,6 @@ function UIModule.new(config)
 		Parent = logoBox,
 	})
 
-	-- 2. Close Button (Custom ID: 87463403317153)
 	local closeBtn = Create("TextButton", {
 		Size = UDim2.new(0, 28, 0, 28),
 		BackgroundColor3 = Theme.Section,
@@ -259,7 +251,7 @@ function UIModule.new(config)
 	end)
 	closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-	-- ========== SIDEBAR ==========
+	-- Sidebar
 	local sidebar = Create("Frame", {
 		Name = "Sidebar",
 		Size = UDim2.new(0, 190, 1, -52),
@@ -302,7 +294,7 @@ function UIModule.new(config)
 		Parent = sidebarList,
 	})
 
-	-- ========== CONTENT ==========
+	-- Content
 	local content = Create("Frame", {
 		Name = "Content",
 		Size = UDim2.new(1, -190, 1, -52),
@@ -338,10 +330,8 @@ function UIModule.new(config)
 		Parent = contentScroll,
 	})
 
-	-- ========== ROBUST WINDOW DRAGGING ==========
-	local dragging = false
-	local dragInput, dragStart, startPos
-
+	-- Dragging Logic
+	local dragging, dragInput, dragStart, startPos
 	titleBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
@@ -349,9 +339,7 @@ function UIModule.new(config)
 			startPos = main.Position
 
 			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
 			end)
 		end
 	end)
@@ -380,7 +368,7 @@ function UIModule.new(config)
 		end
 	end)
 
-	-- ========== CORNER RESIZE HANDLE (Bottom-Right) ==========
+	-- Corner Resize Handle (Bottom-Right)
 	local resizeHandle = Create("TextButton", {
 		Name = "ResizeCorner",
 		Size = UDim2.new(0, 20, 0, 20),
@@ -423,15 +411,12 @@ function UIModule.new(config)
 			local newW = math.clamp(rStartSize.X + delta.X, self.MinSize.X, self.MaxSize.X)
 			local newH = math.clamp(rStartSize.Y + delta.Y, self.MinSize.Y, self.MaxSize.Y)
 
-			local dw = newW - rStartSize.X
-			local dh = newH - rStartSize.Y
-
 			main.Size = UDim2.new(0, newW, 0, newH)
 			main.Position = UDim2.new(
 				rCenterPos.X.Scale,
-				rCenterPos.X.Offset + (dw / 2),
+				rCenterPos.X.Offset + ((newW - rStartSize.X) / 2),
 				rCenterPos.Y.Scale,
-				rCenterPos.Y.Offset + (dh / 2)
+				rCenterPos.Y.Offset + ((newH - rStartSize.Y) / 2)
 			)
 		end
 	end)
@@ -439,7 +424,6 @@ function UIModule.new(config)
 	return self
 end
 
--- ====================== SEPARATE MULTI-SELECT WINDOW ======================
 function UIModule:OpenMultiSelectWindow(config)
 	config = config or {}
 	local title = config.Title or "Adjustments"
@@ -474,7 +458,6 @@ function UIModule:OpenMultiSelectWindow(config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = modalFrame })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = modalFrame })
 
-	-- Modal Header
 	local modalHeader = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 50),
 		BackgroundColor3 = Theme.Sidebar,
@@ -636,7 +619,6 @@ function UIModule:OpenMultiSelectWindow(config)
 		end)
 	end
 
-	-- Confirm Button
 	local bottomBar = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 52),
 		Position = UDim2.new(0, 0, 1, -52),
@@ -683,7 +665,6 @@ function UIModule:OpenMultiSelectWindow(config)
 	modalCloseBtn.MouseButton1Click:Connect(CloseModal)
 end
 
--- ====================== UI ADJUSTMENT BUTTON ======================
 function UIModule:CreateAdjustmentPicker(section, config)
 	config = config or {}
 	local flag = config.Flag or "Adjustments"
@@ -752,7 +733,6 @@ function UIModule:CreateAdjustmentPicker(section, config)
 	}
 end
 
--- ====================== TABS & SECTIONS ======================
 function UIModule:CreateTabLabel(text)
 	Create("TextLabel", {
 		Size = UDim2.new(1, 0, 0, 22),
@@ -921,7 +901,6 @@ function UIModule:CreateSection(tab, config)
 	return section
 end
 
--- ====================== WIDGETS ======================
 function UIModule:CreateToggle(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Toggle"
@@ -1207,205 +1186,5 @@ function UIModule:CreateCheckbox(section, config)
 	row.MouseButton1Click:Connect(function() SetState(not self.Flags[flag]) end)
 	return { Set = SetState, Get = function() return self.Flags[flag] end }
 end
-
--- =========================================================================
--- ===================== INSTANTIATION & DEMO SETUP ========================
--- =========================================================================
-
-local Window = UIModule.new({
-	Title = "ReaperX",
-	Subtitle = "Premium Script Hub",
-	Size = UDim2.new(0, 800, 0, 500),
-	MinSize = Vector2.new(520, 340),
-	MaxSize = Vector2.new(1200, 850),
-})
-
--- Sidebar Tabs
-Window:CreateTabLabel("Main Systems")
-local TabFarm = Window:CreateTab("Auto Farm", Icons.Swords)
-local TabRaids = Window:CreateTab("Auto Raids", Icons.Skull)
-local TabSell = Window:CreateTab("Auto Sell", Icons.Cart)
-
-Window:CreateTabLabel("Configuration")
-local TabUtils = Window:CreateTab("Utilities", Icons.Globe)
-local TabSettings = Window:CreateTab("Settings", Icons.Settings)
-
--- 1. Auto Farm Tab
-local FarmSec = Window:CreateSection(TabFarm, {
-	Title = "Auto Farm Configuration",
-	Subtitle = "Automate quest progression and mob farming",
-})
-
-Window:CreateToggle(FarmSec, {
-	Name = "Auto Farm Level",
-	Description = "Automatically accepts quests and farms optimal mobs",
-	Default = true,
-})
-
-Window:CreateToggle(FarmSec, {
-	Name = "Kill Aura",
-	Description = "Attacks all mobs within your specified range",
-	Default = false,
-})
-
-Window:CreateSlider(FarmSec, {
-	Name = "Attack Range",
-	Min = 10,
-	Max = 60,
-	Default = 25,
-	Suffix = " studs",
-	Increment = 1,
-})
-
-Window:CreateSlider(FarmSec, {
-	Name = "Attack Speed",
-	Min = 1,
-	Max = 10,
-	Default = 5,
-	Suffix = "x",
-	Increment = 1,
-})
-
-Window:CreateCheckbox(FarmSec, {
-	Name = "Prioritize Bosses",
-	Default = true,
-})
-
--- 2. Auto Raids Tab
-local RaidSec = Window:CreateSection(TabRaids, {
-	Title = "Raid Automation",
-	Subtitle = "Instantly clear and farm raids automatically",
-})
-
-Window:CreateToggle(RaidSec, {
-	Name = "Auto Join Raid",
-	Default = false,
-})
-
-Window:CreateToggle(RaidSec, {
-	Name = "Auto Start Next Wave",
-	Default = true,
-})
-
-Window:CreateCheckbox(RaidSec, {
-	Name = "Auto Leave on Low HP (under 25%)",
-	Default = true,
-})
-
-Window:CreateButton(RaidSec, {
-	Name = "Insta-Teleport to Raid Entrance",
-	Callback = function() print("Teleported to raid entrance") end
-})
-
--- 3. Auto Sell Tab
-local SellSec = Window:CreateSection(TabSell, {
-	Title = "Inventory Management",
-	Subtitle = "Clean your inventory and open reward crates",
-})
-
-Window:CreateToggle(SellSec, {
-	Name = "Auto Sell Common Items",
-	Default = true,
-})
-
-Window:CreateToggle(SellSec, {
-	Name = "Auto Open Crates",
-	Default = false,
-})
-
-Window:CreateSlider(SellSec, {
-	Name = "Crate Open Speed",
-	Min = 1,
-	Max = 5,
-	Default = 2,
-	Suffix = "s",
-})
-
--- 4. Utilities Tab
-local UtilSec = Window:CreateSection(TabUtils, {
-	Title = "Player Utilities",
-	Subtitle = "Character enhancements and movement modifiers",
-})
-
-Window:CreateSlider(UtilSec, {
-	Name = "WalkSpeed",
-	Min = 16,
-	Max = 120,
-	Default = 16,
-	Increment = 2,
-	Callback = function(val)
-		local char = Players.LocalPlayer.Character
-		if char and char:FindFirstChild("Humanoid") then
-			char.Humanoid.WalkSpeed = val
-		end
-	end
-})
-
-Window:CreateSlider(UtilSec, {
-	Name = "JumpPower",
-	Min = 50,
-	Max = 200,
-	Default = 50,
-	Increment = 5,
-	Callback = function(val)
-		local char = Players.LocalPlayer.Character
-		if char and char:FindFirstChild("Humanoid") then
-			char.Humanoid.JumpPower = val
-		end
-	end
-})
-
-Window:CreateToggle(UtilSec, {
-	Name = "Infinite Jump",
-	Default = false,
-})
-
-Window:CreateToggle(UtilSec, {
-	Name = "Anti-AFK",
-	Description = "Prevents Roblox from disconnecting you after 20 minutes",
-	Default = true,
-})
-
--- 5. Settings Tab
-local SettingsSec = Window:CreateSection(TabSettings, {
-	Title = "UI & Hub Configurations",
-	Subtitle = "Customize the interface and script preferences",
-})
-
--- Dedicated UI Adjustment Button (No icon / No dropdown menu)
--- Clicking this opens a separate floating window for multi-selections
-Window:CreateAdjustmentPicker(SettingsSec, {
-	Name = "UI Adjustments",
-	Subtitle = "Select features to customize UI behavior",
-	Options = {
-		{ Name = "Compact Sidebar", Description = "Reduces vertical padding in the tab list" },
-		{ Name = "Large Title Fonts", Description = "Enlarges section and category headers" },
-		{ Name = "High Contrast Mode", Description = "Increases border strokes for visibility" },
-		{ Name = "Fast Tweens", Description = "Accelerates window and element animations" },
-		{ Name = "Sound Effects", Description = "Plays subtle audio cues on click" },
-		{ Name = "Auto-Save Settings", Description = "Remembers your flags across game sessions" },
-	},
-	Default = { "Large Title Fonts", "Auto-Save Settings" },
-	Callback = function(selectedItems)
-		print("Selected UI Adjustments:")
-		for _, item in ipairs(selectedItems) do
-			print(" -", item)
-		end
-	end
-})
-
-Window:CreateButton(SettingsSec, {
-	Name = "Copy Discord Invite",
-	Callback = function()
-		if setclipboard then setclipboard("https://discord.gg/reaperx") end
-	end
-})
-
-Window:CreateButton(SettingsSec, {
-	Name = "Unload / Close Interface",
-	Callback = function()
-		Window.Gui:Destroy()
-	end
-})
 
 return UIModule
