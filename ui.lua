@@ -1,7 +1,9 @@
 --[[
-	ReaperX Style UI Library (Enhanced Full Version)
-	รูปแบบ: Dark / Red Accent / Custom Logo & Icons
-	Features: Corner Resizing, Element Typography/Importance, Real Dropdowns
+	ReaperX Style UI Library
+	- Logo at top-right (Fixed Asset URL)
+	- Close button: 87463403317153
+	- Bottom-right corner window resizing
+	- Separate Popup Window for Multi-Selection / UI Adjustments (No dropdowns, no icons)
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -17,7 +19,8 @@ local Theme = {
 	Sidebar    = Color3.fromRGB(20, 20, 23),
 	Content    = Color3.fromRGB(15, 15, 17),
 	Section    = Color3.fromRGB(25, 25, 28),
-	Border     = Color3.fromRGB(38, 38, 44),
+	ModalBg    = Color3.fromRGB(18, 18, 22),
+	Border     = Color3.fromRGB(40, 40, 46),
 
 	Text       = Color3.fromRGB(255, 255, 255),
 	TextDim    = Color3.fromRGB(160, 160, 170),
@@ -29,7 +32,7 @@ local Theme = {
 	-- สีของ Widget ต่างๆ
 	ToggleOff   = Color3.fromRGB(45, 45, 50),
 	SliderTrack = Color3.fromRGB(35, 35, 40),
-	Dropdown    = Color3.fromRGB(30, 30, 35),
+	ItemHover   = Color3.fromRGB(32, 32, 38),
 }
 
 -- Typography / Importance Scale
@@ -54,10 +57,11 @@ end
 
 -- Assets & Icons
 UIModule.Icons = {
-	Logo     = "rbxassetid://137660498980177", -- Custom Logo
-	Close    = "rbxassetid://87463403317153",  -- Custom Close Button
+	-- Universal thumbnail endpoint resolves both decal IDs and image asset IDs
+	Logo     = "rbxthumb://type=Asset&id=137660498980177&w=420&h=420",
+	Close    = "rbxassetid://87463403317153",
 
-	-- เมนูซ้าย (Sidebar)
+	-- เมนูซ้าย
 	Swords   = "rbxassetid://10747377716",
 	Skull    = "rbxassetid://10747384022",
 	Users    = "rbxassetid://10747383281",
@@ -68,12 +72,9 @@ UIModule.Icons = {
 	Servers  = "rbxassetid://10747381285",
 	Settings = "rbxassetid://10747383136",
 
-	-- UI ทั่วไป
+	-- UI Icons
 	Star     = "rbxassetid://10747383049",
 	Play     = "rbxassetid://10747381395",
-	Loop     = "rbxassetid://10747381023",
-	Search   = "rbxassetid://10747381118",
-	Dropdown = "rbxassetid://10747384978",
 	Check    = "rbxassetid://10747376789",
 	Resize   = "rbxassetid://10747384394",
 }
@@ -154,7 +155,7 @@ function UIModule.new(config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = main })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = main })
 
-	-- Keybind to Show/Hide GUI
+	-- Toggle visibility with key
 	UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == self.ToggleKey then
 			main.Visible = not main.Visible
@@ -178,26 +179,13 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Logo
-	local logoImg = Create("ImageLabel", {
-		Name = "Logo",
-		Size = UDim2.new(0, 32, 0, 32),
-		Position = UDim2.new(0, 14, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundTransparency = 1,
-		Image = Icons.Logo,
-		Parent = titleBar,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoImg })
-
-	-- Title & Subtitle Labels
-	local textStartX = 54
+	-- Title and Subtitle
 	local titleSize = ResolveFontSize({ Importance = config.TitleImportance or "Title" }, 15)
 	local subSize = ResolveFontSize({ Importance = config.SubtitleImportance or "Compact" }, 11)
 
 	Create("TextLabel", {
-		Size = UDim2.new(1, -(textStartX + 120), 0, 20),
-		Position = UDim2.new(0, textStartX, 0, 8),
+		Size = UDim2.new(1, -150, 0, 20),
+		Position = UDim2.new(0, 18, 0, 8),
 		BackgroundTransparency = 1,
 		Text = self.Title,
 		TextColor3 = Theme.Text,
@@ -209,8 +197,8 @@ function UIModule.new(config)
 
 	if self.Subtitle ~= "" then
 		Create("TextLabel", {
-			Size = UDim2.new(1, -(textStartX + 120), 0, 16),
-			Position = UDim2.new(0, textStartX, 0, 28),
+			Size = UDim2.new(1, -150, 0, 16),
+			Position = UDim2.new(0, 18, 0, 28),
 			BackgroundTransparency = 1,
 			Text = self.Subtitle,
 			TextColor3 = Theme.TextDim,
@@ -221,10 +209,11 @@ function UIModule.new(config)
 		})
 	end
 
-	-- Top Right Controls (Search, Settings, Close)
-	local btnList = Create("Frame", {
-		Size = UDim2.new(0, 95, 1, 0),
-		Position = UDim2.new(1, -105, 0, 0),
+	-- Top Right Controls (Logo + Close Button)
+	local topRightControls = Create("Frame", {
+		Size = UDim2.new(0, 75, 1, 0),
+		Position = UDim2.new(1, -14, 0, 0),
+		AnchorPoint = Vector2.new(1, 0),
 		BackgroundTransparency = 1,
 		Parent = titleBar,
 	})
@@ -233,28 +222,34 @@ function UIModule.new(config)
 		HorizontalAlignment = Enum.HorizontalAlignment.Right,
 		VerticalAlignment = Enum.VerticalAlignment.Center,
 		Padding = UDim.new(0, 12),
-		Parent = btnList,
+		Parent = topRightControls,
 	})
 
-	local function CreateTopBtn(iconId, callback)
-		local btn = Create("ImageButton", {
-			Size = UDim2.new(0, 18, 0, 18),
-			BackgroundTransparency = 1,
-			Image = iconId,
-			ImageColor3 = Theme.TextDim,
-			Parent = btnList,
-		})
-		btn.MouseEnter:Connect(function() Tween(btn, { ImageColor3 = Theme.Accent }) end)
-		btn.MouseLeave:Connect(function() Tween(btn, { ImageColor3 = Theme.TextDim }) end)
-		if callback then
-			btn.MouseButton1Click:Connect(callback)
-		end
-		return btn
-	end
+	-- 1. Logo (Top Right next to Close Button)
+	local logoImage = Create("ImageLabel", {
+		Name = "TopLogo",
+		Size = UDim2.new(0, 26, 0, 26),
+		BackgroundTransparency = 1,
+		Image = Icons.Logo,
+		ImageColor3 = Color3.fromRGB(255, 255, 255),
+		ScaleType = Enum.ScaleType.Fit,
+		Parent = topRightControls,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoImage })
 
-	CreateTopBtn(Icons.Search)
-	CreateTopBtn(Icons.Settings)
-	CreateTopBtn(Icons.Close, function() gui:Destroy() end)
+	-- 2. Close Button
+	local closeBtn = Create("ImageButton", {
+		Name = "CloseBtn",
+		Size = UDim2.new(0, 20, 0, 20),
+		BackgroundTransparency = 1,
+		Image = Icons.Close,
+		ImageColor3 = Theme.TextDim,
+		ScaleType = Enum.ScaleType.Fit,
+		Parent = topRightControls,
+	})
+	closeBtn.MouseEnter:Connect(function() Tween(closeBtn, { ImageColor3 = Theme.Accent }) end)
+	closeBtn.MouseLeave:Connect(function() Tween(closeBtn, { ImageColor3 = Theme.TextDim }) end)
+	closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
 	-- ========== SIDEBAR ==========
 	local sidebar = Create("Frame", {
@@ -335,7 +330,7 @@ function UIModule.new(config)
 		Parent = contentScroll,
 	})
 
-	-- ========== WINDOW DRAGGING LOGIC (Fixed) ==========
+	-- ========== WINDOW DRAGGING LOGIC ==========
 	local dragging, dragStart, startPos = false, nil, nil
 	titleBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -363,14 +358,14 @@ function UIModule.new(config)
 		end
 	end)
 
-	-- ========== CORNER RESIZE LOGIC (Bottom-Right Handle) ==========
+	-- ========== CORNER RESIZE LOGIC (Bottom-Right) ==========
 	local resizeHandle = Create("ImageButton", {
 		Name = "ResizeHandle",
 		Size = UDim2.new(0, 18, 0, 18),
 		Position = UDim2.new(1, -2, 1, -2),
 		AnchorPoint = Vector2.new(1, 1),
 		BackgroundTransparency = 1,
-		Image = "rbxassetid://10747384394", -- Grip corner icon
+		Image = Icons.Resize,
 		ImageColor3 = Theme.TextDim,
 		ZIndex = 10,
 		Parent = main,
@@ -403,7 +398,6 @@ function UIModule.new(config)
 			local newW = math.clamp(resizeStartSize.X + delta.X, self.MinSize.X, self.MaxSize.X)
 			local newH = math.clamp(resizeStartSize.Y + delta.Y, self.MinSize.Y, self.MaxSize.Y)
 
-			-- Keep Top-Left pinned while AnchorPoint is (0.5, 0.5)
 			local actualDeltaW = newW - resizeStartSize.X
 			local actualDeltaH = newH - resizeStartSize.Y
 
@@ -418,6 +412,334 @@ function UIModule.new(config)
 	end)
 
 	return self
+end
+
+-- ====================== SEPARATE POPUP MULTI-SELECT WINDOW ======================
+function UIModule:OpenMultiSelectWindow(config)
+	config = config or {}
+	local title = config.Title or "Adjustments"
+	local subtitle = config.Subtitle or "Make multiple selections below"
+	local options = config.Options or {}
+	local selected = config.Selected or {}
+	local onApply = config.OnApply
+	local onClose = config.OnClose
+
+	-- Check for existing open window
+	local existing = self.Gui:FindFirstChild("MultiSelectModal")
+	if existing then existing:Destroy() end
+
+	-- Modal Overlay Container
+	local modalContainer = Create("Frame", {
+		Name = "MultiSelectModal",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 0.5,
+		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+		ZIndex = 50,
+		Parent = self.Gui,
+	})
+
+	-- Modal Window Frame
+	local modalFrame = Create("Frame", {
+		Size = UDim2.new(0, 380, 0, 420),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Theme.ModalBg,
+		BorderSizePixel = 0,
+		ZIndex = 51,
+		ClipsDescendants = true,
+		Parent = modalContainer,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = modalFrame })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1.2, Parent = modalFrame })
+
+	-- Modal Header
+	local modalHeader = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 48),
+		BackgroundColor3 = Theme.Sidebar,
+		BorderSizePixel = 0,
+		ZIndex = 52,
+		Parent = modalFrame,
+	})
+	Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 1),
+		Position = UDim2.new(0, 0, 1, -1),
+		BackgroundColor3 = Theme.Border,
+		BorderSizePixel = 0,
+		ZIndex = 52,
+		Parent = modalHeader,
+	})
+
+	Create("TextLabel", {
+		Size = UDim2.new(1, -60, 0, 18),
+		Position = UDim2.new(0, 16, 0, 8),
+		BackgroundTransparency = 1,
+		Text = title,
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 53,
+		Parent = modalHeader,
+	})
+
+	Create("TextLabel", {
+		Size = UDim2.new(1, -60, 0, 14),
+		Position = UDim2.new(0, 16, 0, 26),
+		BackgroundTransparency = 1,
+		Text = subtitle,
+		TextColor3 = Theme.TextDim,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 53,
+		Parent = modalHeader,
+	})
+
+	local modalCloseBtn = Create("ImageButton", {
+		Size = UDim2.new(0, 18, 0, 18),
+		Position = UDim2.new(1, -14, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
+		BackgroundTransparency = 1,
+		Image = Icons.Close,
+		ImageColor3 = Theme.TextDim,
+		ScaleType = Enum.ScaleType.Fit,
+		ZIndex = 53,
+		Parent = modalHeader,
+	})
+
+	-- Scrolling Items List
+	local scrollList = Create("ScrollingFrame", {
+		Size = UDim2.new(1, 0, 1, -100),
+		Position = UDim2.new(0, 0, 0, 48),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 3,
+		ScrollBarImageColor3 = Theme.Border,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ZIndex = 52,
+		Parent = modalFrame,
+	})
+	Create("UIListLayout", {
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = scrollList,
+	})
+	Create("UIPadding", {
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 14),
+		PaddingRight = UDim.new(0, 14),
+		Parent = scrollList,
+	})
+
+	-- Track local choices
+	local currentSelected = {}
+	for _, v in ipairs(selected) do
+		currentSelected[v] = true
+	end
+
+	-- Render multi-selection rows
+	for _, opt in ipairs(options) do
+		local optName = type(opt) == "table" and opt.Name or tostring(opt)
+		local optDesc = type(opt) == "table" and opt.Description or nil
+
+		local row = Create("TextButton", {
+			Size = UDim2.new(1, 0, 0, optDesc and 40 or 32),
+			BackgroundColor3 = Theme.Section,
+			AutoButtonColor = false,
+			BorderSizePixel = 0,
+			Text = "",
+			ZIndex = 53,
+			Parent = scrollList,
+		})
+		Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
+		Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = row })
+
+		local box = Create("Frame", {
+			Size = UDim2.new(0, 18, 0, 18),
+			Position = UDim2.new(0, 10, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundColor3 = currentSelected[optName] and Theme.Accent or Theme.ToggleOff,
+			BorderSizePixel = 0,
+			ZIndex = 54,
+			Parent = row,
+		})
+		Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = box })
+		local boxGrad = ApplyGradient(box, Theme.Accent, Theme.AccentDark)
+		boxGrad.Enabled = currentSelected[optName] == true
+
+		local check = Create("ImageLabel", {
+			Size = UDim2.new(0, 12, 0, 12),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			Image = Icons.Check,
+			ImageColor3 = Color3.fromRGB(255, 255, 255),
+			ImageTransparency = currentSelected[optName] and 0 or 1,
+			ZIndex = 55,
+			Parent = box,
+		})
+
+		local titleLbl = Create("TextLabel", {
+			Size = UDim2.new(1, -38, 0, optDesc and 16 or 32),
+			Position = UDim2.new(0, 36, 0, optDesc and 4 or 0),
+			BackgroundTransparency = 1,
+			Text = optName,
+			TextColor3 = Theme.Text,
+			Font = Enum.Font.GothamMedium,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 54,
+			Parent = row,
+		})
+
+		if optDesc then
+			Create("TextLabel", {
+				Size = UDim2.new(1, -38, 0, 14),
+				Position = UDim2.new(0, 36, 0, 20),
+				BackgroundTransparency = 1,
+				Text = optDesc,
+				TextColor3 = Theme.TextDim,
+				Font = Enum.Font.Gotham,
+				TextSize = 10,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 54,
+				Parent = row,
+			})
+		end
+
+		row.MouseButton1Click:Connect(function()
+			currentSelected[optName] = not currentSelected[optName]
+			local isNowSelected = currentSelected[optName]
+
+			boxGrad.Enabled = isNowSelected
+			Tween(box, { BackgroundColor3 = isNowSelected and Theme.Accent or Theme.ToggleOff }, 0.15)
+			Tween(check, { ImageTransparency = isNowSelected and 0 or 1 }, 0.15)
+		end)
+	end
+
+	-- Modal Bottom Bar (Apply / Close Button)
+	local bottomBar = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 50),
+		Position = UDim2.new(0, 0, 1, -50),
+		BackgroundColor3 = Theme.Sidebar,
+		BorderSizePixel = 0,
+		ZIndex = 52,
+		Parent = modalFrame,
+	})
+	Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 1),
+		Position = UDim2.new(0, 0, 0, 0),
+		BackgroundColor3 = Theme.Border,
+		BorderSizePixel = 0,
+		ZIndex = 52,
+		Parent = bottomBar,
+	})
+
+	local applyBtn = Create("TextButton", {
+		Size = UDim2.new(1, -24, 0, 32),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Theme.Accent,
+		Text = "Confirm & Close",
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		AutoButtonColor = false,
+		ZIndex = 53,
+		Parent = bottomBar,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = applyBtn })
+	ApplyGradient(applyBtn, Theme.Accent, Theme.AccentDark)
+
+	local function CloseWindow()
+		local finalSelections = {}
+		for k, v in pairs(currentSelected) do
+			if v then table.insert(finalSelections, k) end
+		end
+		if onApply then onApply(finalSelections) end
+		if onClose then onClose(finalSelections) end
+		modalContainer:Destroy()
+	end
+
+	applyBtn.MouseButton1Click:Connect(CloseWindow)
+	modalCloseBtn.MouseButton1Click:Connect(CloseWindow)
+end
+
+-- ====================== UI ADJUSTMENT COMPONENT (NO ICONS / NO DROPDOWN) ======================
+function UIModule:CreateAdjustmentPicker(section, config)
+	config = config or {}
+	local flag = config.Flag or config.Name or "Adjustments"
+	local options = config.Options or { "Compact Mode", "Bold Fonts", "Large Buttons", "High Contrast" }
+	local defaultSelected = config.Default or {}
+	self.Flags[flag] = defaultSelected
+
+	local textSize = ResolveFontSize(config, Typography.Primary)
+
+	-- Clean flat button (No arrow icon, no dropdown)
+	local row = Create("TextButton", {
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundColor3 = Theme.Section,
+		Text = "",
+		AutoButtonColor = false,
+		Parent = section,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = row })
+
+	local titleLabel = Create("TextLabel", {
+		Size = UDim2.new(0.65, 0, 1, 0),
+		Position = UDim2.new(0, 12, 0, 0),
+		BackgroundTransparency = 1,
+		Text = config.Name or "UI Adjustments",
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.GothamMedium,
+		TextSize = textSize,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = row,
+	})
+
+	local statusBadge = Create("TextLabel", {
+		Size = UDim2.new(0.3, 0, 1, 0),
+		Position = UDim2.new(1, -12, 0, 0),
+		AnchorPoint = Vector2.new(1, 0),
+		BackgroundTransparency = 1,
+		Text = #self.Flags[flag] .. " Selected",
+		TextColor3 = Theme.Accent,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Parent = row,
+	})
+
+	row.MouseEnter:Connect(function() Tween(row, { BackgroundColor3 = Theme.ItemHover }) end)
+	row.MouseLeave:Connect(function() Tween(row, { BackgroundColor3 = Theme.Section }) end)
+
+	row.MouseButton1Click:Connect(function()
+		self:OpenMultiSelectWindow({
+			Title = config.Name or "UI Adjustments",
+			Subtitle = config.Subtitle or "Select the settings you wish to apply",
+			Options = options,
+			Selected = self.Flags[flag],
+			OnApply = function(newSelection)
+				self.Flags[flag] = newSelection
+				statusBadge.Text = #newSelection .. " Selected"
+				if config.Callback then
+					config.Callback(newSelection)
+				end
+			end
+		})
+	end)
+
+	return {
+		Get = function() return self.Flags[flag] end,
+		Set = function(newSelection)
+			self.Flags[flag] = newSelection
+			statusBadge.Text = #newSelection .. " Selected"
+			if config.Callback then config.Callback(newSelection) end
+		end
+	}
 end
 
 -- ====================== TABS ======================
@@ -536,7 +858,7 @@ function UIModule:SelectTab(tab)
 	self.CurrentTab = tab
 end
 
--- ====================== SECTION ======================
+-- ====================== SECTION (No Icon required) ======================
 function UIModule:CreateSection(tab, config)
 	config = config or {}
 	local titleSize = ResolveFontSize({ TextSize = config.TitleSize, Importance = config.Importance }, Typography.Title)
@@ -566,26 +888,14 @@ function UIModule:CreateSection(tab, config)
 
 	if config.Title then
 		local header = Create("Frame", {
-			Size = UDim2.new(1, 0, 0, config.Subtitle and 36 or 22),
+			Size = UDim2.new(1, 0, 0, config.Subtitle and 36 or 20),
 			BackgroundTransparency = 1,
 			Parent = section,
 		})
 
-		if config.Icon then
-			Create("ImageLabel", {
-				Size = UDim2.new(0, 18, 0, 18),
-				Position = UDim2.new(0, 0, 0, 2),
-				BackgroundTransparency = 1,
-				Image = config.Icon,
-				ImageColor3 = Theme.Accent,
-				Parent = header,
-			})
-		end
-
-		local textOffset = config.Icon and 26 or 0
 		Create("TextLabel", {
-			Size = UDim2.new(1, -textOffset, 0, 18),
-			Position = UDim2.new(0, textOffset, 0, 0),
+			Size = UDim2.new(1, 0, 0, 18),
+			Position = UDim2.new(0, 0, 0, 0),
 			BackgroundTransparency = 1,
 			Text = config.Title,
 			TextColor3 = Theme.Text,
@@ -597,8 +907,8 @@ function UIModule:CreateSection(tab, config)
 
 		if config.Subtitle then
 			Create("TextLabel", {
-				Size = UDim2.new(1, -textOffset, 0, 14),
-				Position = UDim2.new(0, textOffset, 0, 19),
+				Size = UDim2.new(1, 0, 0, 14),
+				Position = UDim2.new(0, 0, 0, 19),
 				BackgroundTransparency = 1,
 				Text = config.Subtitle,
 				TextColor3 = Theme.TextDim,
@@ -620,7 +930,7 @@ function UIModule:CreateButton(section, config)
 
 	local btn = Create("TextButton", {
 		Size = UDim2.new(1, 0, 0, 34),
-		BackgroundColor3 = Theme.Dropdown,
+		BackgroundColor3 = Theme.ModalBg,
 		Text = config.Name or "Button",
 		TextColor3 = Theme.Text,
 		Font = Enum.Font.GothamMedium,
@@ -632,14 +942,12 @@ function UIModule:CreateButton(section, config)
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = btn })
 
 	btn.MouseEnter:Connect(function() Tween(btn, { BackgroundColor3 = Theme.AccentDark }) end)
-	btn.MouseLeave:Connect(function() Tween(btn, { BackgroundColor3 = Theme.Dropdown }) end)
+	btn.MouseLeave:Connect(function() Tween(btn, { BackgroundColor3 = Theme.ModalBg }) end)
 	btn.MouseButton1Click:Connect(function()
 		Tween(btn, { TextSize = textSize - 1 }, 0.05).Completed:Connect(function()
 			Tween(btn, { TextSize = textSize }, 0.05)
 		end)
-		if config.Callback then
-			config.Callback()
-		end
+		if config.Callback then config.Callback() end
 	end)
 	return btn
 end
@@ -715,9 +1023,7 @@ function UIModule:CreateToggle(section, config)
 		trackGradient.Enabled = state
 		Tween(track, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff })
 		Tween(knob, { Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) })
-		if config.Callback then
-			config.Callback(state)
-		end
+		if config.Callback then config.Callback(state) end
 	end
 
 	row.MouseButton1Click:Connect(function()
@@ -817,9 +1123,7 @@ function UIModule:CreateSlider(section, config)
 		Tween(knob, { Position = UDim2.new(percent, 0, 0.5, 0) }, 0.08)
 
 		valueLabel.Text = tostring(val) .. (config.Suffix or "")
-		if config.Callback then
-			config.Callback(val)
-		end
+		if config.Callback then config.Callback(val) end
 	end
 
 	local dragging = false
@@ -859,232 +1163,6 @@ function UIModule:CreateSlider(section, config)
 		end,
 		Get = function() return self.Flags[flag] end,
 	}
-end
-
--- ====================== REAL EXPANDING DROPDOWN ======================
-function UIModule:CreateDropdown(section, config)
-	config = config or {}
-	local flag = config.Flag or config.Name or "Dropdown"
-	local options = config.Options or { "Option 1", "Option 2" }
-	local default = config.Default or options[1]
-	self.Flags[flag] = default
-
-	local titleSize = ResolveFontSize(config, Typography.Primary)
-	local itemSize = ResolveFontSize({ TextSize = config.ItemSize, Importance = config.ItemImportance }, Typography.Secondary)
-
-	local container = Create("Frame", {
-		Size = UDim2.new(1, 0, 0, 36),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundTransparency = 1,
-		Parent = section,
-	})
-
-	local header = Create("Frame", {
-		Size = UDim2.new(1, 0, 0, 36),
-		BackgroundTransparency = 1,
-		Parent = container,
-	})
-
-	Create("TextLabel", {
-		Size = UDim2.new(0.4, 0, 1, 0),
-		BackgroundTransparency = 1,
-		Text = config.Name or "Dropdown",
-		TextColor3 = Theme.Text,
-		Font = Enum.Font.GothamMedium,
-		TextSize = titleSize,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = header,
-	})
-
-	local box = Create("TextButton", {
-		Size = UDim2.new(0.58, 0, 0, 30),
-		Position = UDim2.new(1, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(1, 0.5),
-		BackgroundColor3 = Theme.Dropdown,
-		Text = "   " .. default,
-		TextColor3 = Theme.Text,
-		Font = Enum.Font.Gotham,
-		TextSize = itemSize,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		AutoButtonColor = false,
-		Parent = header,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = box })
-	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = box })
-
-	local arrow = Create("ImageLabel", {
-		Size = UDim2.new(0, 16, 0, 16),
-		Position = UDim2.new(1, -22, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundTransparency = 1,
-		Image = Icons.Dropdown,
-		ImageColor3 = Theme.TextDim,
-		Parent = box,
-	})
-
-	local listFrame = Create("Frame", {
-		Size = UDim2.new(1, 0, 0, 0),
-		Position = UDim2.new(0, 0, 0, 40),
-		BackgroundColor3 = Theme.Dropdown,
-		BorderSizePixel = 0,
-		Visible = false,
-		ClipsDescendants = true,
-		Parent = container,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = listFrame })
-	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = listFrame })
-
-	local listLayout = Create("UIListLayout", {
-		Padding = UDim.new(0, 2),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = listFrame,
-	})
-	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 4),
-		PaddingBottom = UDim.new(0, 4),
-		PaddingLeft = UDim.new(0, 4),
-		PaddingRight = UDim.new(0, 4),
-		Parent = listFrame,
-	})
-
-	local isOpen = false
-	local function Populate()
-		for _, child in ipairs(listFrame:GetChildren()) do
-			if child:IsA("TextButton") then
-				child:Destroy()
-			end
-		end
-
-		for _, opt in ipairs(options) do
-			local itemBtn = Create("TextButton", {
-				Size = UDim2.new(1, 0, 0, 26),
-				BackgroundColor3 = (opt == self.Flags[flag]) and Theme.AccentDark or Theme.Dropdown,
-				BackgroundTransparency = (opt == self.Flags[flag]) and 0.4 or 1,
-				Text = "   " .. tostring(opt),
-				TextColor3 = (opt == self.Flags[flag]) and Theme.Text or Theme.TextDim,
-				Font = Enum.Font.Gotham,
-				TextSize = itemSize,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				AutoButtonColor = false,
-				Parent = listFrame,
-			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = itemBtn })
-
-			itemBtn.MouseEnter:Connect(function()
-				if opt ~= self.Flags[flag] then
-					Tween(itemBtn, { BackgroundTransparency = 0.8, TextColor3 = Theme.Text })
-				end
-			end)
-			itemBtn.MouseLeave:Connect(function()
-				if opt ~= self.Flags[flag] then
-					Tween(itemBtn, { BackgroundTransparency = 1, TextColor3 = Theme.TextDim })
-				end
-			end)
-			itemBtn.MouseButton1Click:Connect(function()
-				self.Flags[flag] = opt
-				box.Text = "   " .. tostring(opt)
-				isOpen = false
-				Tween(arrow, { Rotation = 0 }, 0.15)
-				listFrame.Visible = false
-				Populate()
-				if config.Callback then
-					config.Callback(opt)
-				end
-			end)
-		end
-		listFrame.Size = UDim2.new(1, 0, 0, #options * 28 + 8)
-	end
-
-	Populate()
-
-	box.MouseButton1Click:Connect(function()
-		isOpen = not isOpen
-		listFrame.Visible = isOpen
-		Tween(arrow, { Rotation = isOpen and 180 or 0 }, 0.2)
-	end)
-
-	return {
-		Set = function(v)
-			self.Flags[flag] = v
-			box.Text = "   " .. tostring(v)
-			Populate()
-			if config.Callback then config.Callback(v) end
-		end,
-		Get = function() return self.Flags[flag] end,
-		Refresh = function(newOpts)
-			options = newOpts or options
-			Populate()
-		end,
-	}
-end
-
--- ====================== CHECKBOX ======================
-function UIModule:CreateCheckbox(section, config)
-	config = config or {}
-	local flag = config.Flag or config.Name or "Checkbox"
-	local default = config.Default or false
-	self.Flags[flag] = default
-
-	local textSize = ResolveFontSize(config, Typography.Primary)
-
-	local row = Create("TextButton", {
-		Size = UDim2.new(1, 0, 0, 26),
-		BackgroundTransparency = 1,
-		Text = "",
-		AutoButtonColor = false,
-		Parent = section,
-	})
-
-	local box = Create("Frame", {
-		Size = UDim2.new(0, 20, 0, 20),
-		Position = UDim2.new(0, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = default and Theme.Accent or Theme.ToggleOff,
-		BorderSizePixel = 0,
-		Parent = row,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = box })
-	local boxGradient = ApplyGradient(box, Theme.Accent, Theme.AccentDark)
-	boxGradient.Enabled = default
-
-	local checkIcon = Create("ImageLabel", {
-		Size = UDim2.new(0, 14, 0, 14),
-		Position = UDim2.new(0.5, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundTransparency = 1,
-		Image = Icons.Check,
-		ImageColor3 = Color3.new(1, 1, 1),
-		ImageTransparency = default and 0 or 1,
-		Parent = box,
-	})
-
-	Create("TextLabel", {
-		Size = UDim2.new(1, -30, 1, 0),
-		Position = UDim2.new(0, 30, 0, 0),
-		BackgroundTransparency = 1,
-		Text = config.Name or "Checkbox",
-		TextColor3 = Theme.Text,
-		Font = Enum.Font.GothamMedium,
-		TextSize = textSize,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = row,
-	})
-
-	local function SetState(state)
-		self.Flags[flag] = state
-		boxGradient.Enabled = state
-		Tween(box, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff })
-		Tween(checkIcon, { ImageTransparency = state and 0 or 1 })
-		if config.Callback then
-			config.Callback(state)
-		end
-	end
-
-	row.MouseButton1Click:Connect(function()
-		SetState(not self.Flags[flag])
-	end)
-
-	return { Set = SetState, Get = function() return self.Flags[flag] end }
 end
 
 -- ====================== LABEL ======================
