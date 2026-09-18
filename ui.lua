@@ -1,6 +1,6 @@
 -- ==============================================================================
---                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.3)
---              Crash Fix | Rounded Corners | Zero Text Overlap
+--                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.4)
+--    Gold Subtitle Badge | Overflow Prevention | Dropdown Elevation | Silky Corners
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -21,10 +21,15 @@ local THEME = {
     ItemBg        = Color3.fromRGB(28, 28, 36),
     ItemHoverBg   = Color3.fromRGB(35, 35, 46),
     ItemPressBg   = Color3.fromRGB(42, 42, 56),
-    BorderSubtle  = Color3.fromRGB(38, 38, 48),
-    BorderFocus   = Color3.fromRGB(65, 65, 82),
+    BorderSubtle  = Color3.fromRGB(40, 40, 52),
+    BorderFocus   = Color3.fromRGB(75, 75, 96),
     Accent        = Color3.fromRGB(255, 255, 255),
     AccentMuted   = Color3.fromRGB(180, 180, 195),
+    
+    -- Premium Gold Theme for Subtitle
+    Gold          = Color3.fromRGB(255, 204, 50),
+    GoldBg        = Color3.fromRGB(36, 30, 16),
+    GoldBorder    = Color3.fromRGB(120, 95, 30),
     
     TextPrimary   = Color3.fromRGB(245, 245, 250),
     TextSecondary = Color3.fromRGB(145, 145, 160),
@@ -35,12 +40,12 @@ local THEME = {
     MinYellow     = Color3.fromRGB(254, 188, 46),
     MaxGreen      = Color3.fromRGB(40, 200, 64),
     
-    -- Rounded Radius Guidelines
+    -- Silky Smooth Rounded Radius Guidelines
     RadiusWindow  = UDim.new(0, 16),
     RadiusCard    = UDim.new(0, 12),
     RadiusItem    = UDim.new(0, 9),
     RadiusPill    = UDim.new(1, 0),
-    RadiusSmall   = UDim.new(0, 6),
+    RadiusSmall   = UDim.new(0, 7),
 }
 
 -- Fallback high-res Lucide icons
@@ -130,7 +135,7 @@ function UIModule.new(cfg)
     local self = setmetatable({}, UIModule)
 
     self.TitleText    = cfg.Title or "Xyrax Hub"
-    self.SubtitleText = cfg.Subtitle or "macOS Edition"
+    self.SubtitleText = cfg.Subtitle or "Premium Script"
     self.WindowSize   = cfg.Size or UDim2.new(0, 800, 0, 500)
     self.ToggleKey    = cfg.ToggleKey or Enum.KeyCode.RightControl
     self.Accent       = cfg.AccentColor or THEME.Accent
@@ -183,7 +188,7 @@ function UIModule.new(cfg)
         shadowFrame.Position = mainFrame.Position
     end)
 
-    -- Window Corner & Border
+    -- Window Corner & Border (Silky smooth curved corners)
     local windowCorner = Instance.new("UICorner")
     windowCorner.CornerRadius = THEME.RadiusWindow
     windowCorner.Parent = mainFrame
@@ -291,7 +296,7 @@ function UIModule.new(cfg)
     -- Window Title & Subtitle (Left aligned next to traffic lights)
     local titleContainer = Instance.new("Frame")
     titleContainer.Name = "TitleContainer"
-    titleContainer.Size = UDim2.new(0, 300, 1, 0)
+    titleContainer.Size = UDim2.new(0, 320, 1, 0)
     titleContainer.Position = UDim2.new(0, 95, 0, 0)
     titleContainer.BackgroundTransparency = 1
     titleContainer.Parent = header
@@ -299,7 +304,7 @@ function UIModule.new(cfg)
     local titleList = Instance.new("UIListLayout")
     titleList.FillDirection = Enum.FillDirection.Horizontal
     titleList.VerticalAlignment = Enum.VerticalAlignment.Center
-    titleList.Padding = UDim.new(0, 8)
+    titleList.Padding = UDim.new(0, 9)
     titleList.Parent = titleContainer
 
     local mainTitle = Instance.new("TextLabel")
@@ -314,11 +319,12 @@ function UIModule.new(cfg)
     mainTitle.TextXAlignment = Enum.TextXAlignment.Left
     mainTitle.Parent = titleContainer
 
+    -- Subtitle Badge Pill (Styled in Gold Accent)
     local subPill = Instance.new("Frame")
     subPill.Name = "SubPill"
-    subPill.Size = UDim2.new(0, 0, 0, 20)
+    subPill.Size = UDim2.new(0, 0, 0, 22)
     subPill.AutomaticSize = Enum.AutomaticSize.X
-    subPill.BackgroundColor3 = THEME.ItemBg
+    subPill.BackgroundColor3 = THEME.GoldBg
     subPill.BorderSizePixel = 0
     subPill.Parent = titleContainer
 
@@ -327,13 +333,14 @@ function UIModule.new(cfg)
     subPillCorner.Parent = subPill
 
     local subPillStroke = Instance.new("UIStroke")
-    subPillStroke.Color = THEME.BorderSubtle
+    subPillStroke.Color = THEME.GoldBorder
     subPillStroke.Thickness = 1
+    subPillStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     subPillStroke.Parent = subPill
 
     local subPillPad = Instance.new("UIPadding")
-    subPillPad.PaddingLeft = UDim.new(0, 8)
-    subPillPad.PaddingRight = UDim.new(0, 8)
+    subPillPad.PaddingLeft = UDim.new(0, 9)
+    subPillPad.PaddingRight = UDim.new(0, 9)
     subPillPad.Parent = subPill
 
     local subTitle = Instance.new("TextLabel")
@@ -342,9 +349,9 @@ function UIModule.new(cfg)
     subTitle.AutomaticSize = Enum.AutomaticSize.X
     subTitle.BackgroundTransparency = 1
     subTitle.Text = self.SubtitleText
-    subTitle.Font = Enum.Font.GothamMedium
+    subTitle.Font = Enum.Font.GothamBold
     subTitle.TextSize = 11
-    subTitle.TextColor3 = THEME.TextSecondary
+    subTitle.TextColor3 = THEME.Gold
     subTitle.Parent = subPill
 
     -- Status Pill (Right side: FPS & Ping monitor)
@@ -511,6 +518,7 @@ function UIModule:Notify(opts)
         notifContainer.Position = UDim2.new(1, -20, 0, 15)
         notifContainer.AnchorPoint = Vector2.new(1, 0)
         notifContainer.BackgroundTransparency = 1
+        notifContainer.ZIndex = 1000
         notifContainer.Parent = self.ScreenGui
 
         local nl = Instance.new("UIListLayout")
@@ -527,6 +535,7 @@ function UIModule:Notify(opts)
     notifCard.BackgroundColor3 = THEME.CardBg
     notifCard.BorderSizePixel = 0
     notifCard.Position = UDim2.new(1, 40, 0, 0)
+    notifCard.ZIndex = 1001
     notifCard.Parent = notifContainer
 
     local notifCorner = Instance.new("UICorner")
@@ -640,6 +649,7 @@ function UIModule:CreateTab(name, iconName)
     page.ScrollBarImageColor3 = THEME.BorderSubtle
     page.CanvasSize = UDim2.new(0, 0, 0, 0)
     page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.ClipsDescendants = false
     page.Visible = false
     page.Parent = self.ContentArea
     tab.Page = page
@@ -657,6 +667,7 @@ function UIModule:CreateTab(name, iconName)
     colContainer.Size = UDim2.new(1, 0, 0, 0)
     colContainer.AutomaticSize = Enum.AutomaticSize.Y
     colContainer.BackgroundTransparency = 1
+    colContainer.ClipsDescendants = false
     colContainer.Parent = page
 
     local leftCol = Instance.new("Frame")
@@ -665,6 +676,7 @@ function UIModule:CreateTab(name, iconName)
     leftCol.Position = UDim2.new(0, 0, 0, 0)
     leftCol.AutomaticSize = Enum.AutomaticSize.Y
     leftCol.BackgroundTransparency = 1
+    leftCol.ClipsDescendants = false
     leftCol.Parent = colContainer
 
     local leftLayout = Instance.new("UIListLayout")
@@ -679,6 +691,7 @@ function UIModule:CreateTab(name, iconName)
     rightCol.Position = UDim2.new(0.5, 7, 0, 0)
     rightCol.AutomaticSize = Enum.AutomaticSize.Y
     rightCol.BackgroundTransparency = 1
+    rightCol.ClipsDescendants = false
     rightCol.Parent = colContainer
 
     local rightLayout = Instance.new("UIListLayout")
@@ -800,7 +813,6 @@ function UIModule:CreateTab(name, iconName)
         tab.SetActive(true)
     end
 
-    -- Support direct tab:CreateSection(opts)
     function tab:CreateSection(opts)
         return self.Window:CreateSection(self, opts)
     end
@@ -841,6 +853,7 @@ function UIModule:CreateSection(tab, opts)
     card.AutomaticSize = Enum.AutomaticSize.Y
     card.BackgroundColor3 = THEME.CardBg
     card.BorderSizePixel = 0
+    card.ClipsDescendants = false
     card.Parent = targetCol
 
     local cardCorner = Instance.new("UICorner")
@@ -1005,6 +1018,7 @@ function UIModule:CreateSection(tab, opts)
     container.Size = UDim2.new(1, 0, 0, 0)
     container.AutomaticSize = Enum.AutomaticSize.Y
     container.BackgroundTransparency = 1
+    container.ClipsDescendants = false
     container.Parent = card
 
     local itemLayout = Instance.new("UIListLayout")
@@ -1013,7 +1027,24 @@ function UIModule:CreateSection(tab, opts)
     itemLayout.Padding = UDim.new(0, 8)
     itemLayout.Parent = container
 
-    return container
+    -- Expose section wrapper table with container
+    local sectionObj = {
+        Card = card,
+        Container = container,
+        Window = self,
+    }
+    setmetatable(sectionObj, {
+        __index = function(t, k)
+            if UIModule[k] then
+                return function(_, ...)
+                    return UIModule[k](<self, container, ...>)
+                end
+            end
+            return container[k]
+        end
+    })
+
+    return sectionObj
 end
 
 -- ==============================================================================
@@ -1038,6 +1069,7 @@ function UIModule:CreateButton(parent, opts)
     btn.BorderSizePixel = 0
     btn.Text = ""
     btn.AutoButtonColor = false
+    btn.ClipsDescendants = true
     btn.Parent = parent
 
     local btnCorner = Instance.new("UICorner")
@@ -1076,6 +1108,7 @@ function UIModule:CreateButton(parent, opts)
     textContainer.Size = UDim2.new(1, -leftOffset - 24, 1, 0)
     textContainer.Position = UDim2.new(0, leftOffset, 0, 0)
     textContainer.BackgroundTransparency = 1
+    textContainer.ClipsDescendants = true
     textContainer.Parent = btn
 
     local textLayout = Instance.new("UIListLayout")
@@ -1172,6 +1205,7 @@ function UIModule:CreateToggle(parent, opts)
     row.BorderSizePixel = 0
     row.Text = ""
     row.AutoButtonColor = false
+    row.ClipsDescendants = true
     row.Parent = parent
 
     local rowCorner = Instance.new("UICorner")
@@ -1181,6 +1215,7 @@ function UIModule:CreateToggle(parent, opts)
     local rowStroke = Instance.new("UIStroke")
     rowStroke.Color = THEME.BorderSubtle
     rowStroke.Thickness = 1
+    rowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     rowStroke.Parent = row
 
     local rowPad = Instance.new("UIPadding")
@@ -1194,6 +1229,7 @@ function UIModule:CreateToggle(parent, opts)
     textContainer.Size = UDim2.new(1, -60, 1, 0)
     textContainer.Position = UDim2.new(0, 0, 0, 0)
     textContainer.BackgroundTransparency = 1
+    textContainer.ClipsDescendants = true
     textContainer.Parent = row
 
     local textLayout = Instance.new("UIListLayout")
@@ -1312,6 +1348,7 @@ function UIModule:CreateSlider(parent, opts)
     card.Size = UDim2.new(1, 0, 0, 56)
     card.BackgroundColor3 = THEME.ItemBg
     card.BorderSizePixel = 0
+    card.ClipsDescendants = true
     card.Parent = parent
 
     local cardCorner = Instance.new("UICorner")
@@ -1321,6 +1358,7 @@ function UIModule:CreateSlider(parent, opts)
     local cardStroke = Instance.new("UIStroke")
     cardStroke.Color = THEME.BorderSubtle
     cardStroke.Thickness = 1
+    cardStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     cardStroke.Parent = card
 
     local cardPad = Instance.new("UIPadding")
@@ -1335,6 +1373,7 @@ function UIModule:CreateSlider(parent, opts)
     topRow.Name = "TopRow"
     topRow.Size = UDim2.new(1, 0, 0, 20)
     topRow.BackgroundTransparency = 1
+    topRow.ClipsDescendants = true
     topRow.Parent = card
 
     local titleLabel = Instance.new("TextLabel")
@@ -1365,6 +1404,7 @@ function UIModule:CreateSlider(parent, opts)
     local vpStroke = Instance.new("UIStroke")
     vpStroke.Color = THEME.BorderSubtle
     vpStroke.Thickness = 1
+    vpStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     vpStroke.Parent = valPill
 
     local valLabel = Instance.new("TextLabel")
@@ -1375,6 +1415,7 @@ function UIModule:CreateSlider(parent, opts)
     valLabel.Font = Enum.Font.GothamBold
     valLabel.TextSize = 11
     valLabel.TextColor3 = THEME.TextPrimary
+    valLabel.TextTruncate = Enum.TextTruncate.AtEnd
     valLabel.Parent = valPill
 
     -- Track container (Clean spacing below top row)
@@ -1466,7 +1507,7 @@ function UIModule:CreateSlider(parent, opts)
 end
 
 -- ==============================================================================
---                               WIDGET: DROPDOWN
+--                               WIDGET: DROPDOWN (Elevated & Never Covered)
 -- ==============================================================================
 function UIModule:CreateDropdown(parent, opts)
     parent = ResolveParent(parent)
@@ -1482,6 +1523,8 @@ function UIModule:CreateDropdown(parent, opts)
     row.Size = UDim2.new(1, 0, 0, 38)
     row.BackgroundColor3 = THEME.ItemBg
     row.BorderSizePixel = 0
+    row.ClipsDescendants = false
+    row.ZIndex = 1
     row.Parent = parent
 
     local rowCorner = Instance.new("UICorner")
@@ -1491,6 +1534,7 @@ function UIModule:CreateDropdown(parent, opts)
     local rowStroke = Instance.new("UIStroke")
     rowStroke.Color = THEME.BorderSubtle
     rowStroke.Thickness = 1
+    rowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     rowStroke.Parent = row
 
     local rowPad = Instance.new("UIPadding")
@@ -1519,6 +1563,8 @@ function UIModule:CreateDropdown(parent, opts)
     dropBtn.BorderSizePixel = 0
     dropBtn.Text = ""
     dropBtn.AutoButtonColor = false
+    dropBtn.ClipsDescendants = false
+    dropBtn.ZIndex = 2
     dropBtn.Parent = row
 
     local dbCorner = Instance.new("UICorner")
@@ -1528,6 +1574,7 @@ function UIModule:CreateDropdown(parent, opts)
     local dbStroke = Instance.new("UIStroke")
     dbStroke.Color = THEME.BorderSubtle
     dbStroke.Thickness = 1
+    dbStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     dbStroke.Parent = dropBtn
 
     local selLabel = Instance.new("TextLabel")
@@ -1553,7 +1600,7 @@ function UIModule:CreateDropdown(parent, opts)
     arrowIcon.ImageColor3 = THEME.TextSecondary
     arrowIcon.Parent = dropBtn
 
-    -- Flyout list container
+    -- Flyout list container (Elevated above siblings & cards)
     local flyout = Instance.new("Frame")
     flyout.Name = "FlyoutList"
     flyout.Size = UDim2.new(1, 0, 0, 0)
@@ -1562,7 +1609,7 @@ function UIModule:CreateDropdown(parent, opts)
     flyout.BorderSizePixel = 0
     flyout.ClipsDescendants = true
     flyout.Visible = false
-    flyout.ZIndex = 50
+    flyout.ZIndex = 120
     flyout.Parent = dropBtn
 
     local fCorner = Instance.new("UICorner")
@@ -1572,6 +1619,7 @@ function UIModule:CreateDropdown(parent, opts)
     local fStroke = Instance.new("UIStroke")
     fStroke.Color = THEME.BorderFocus
     fStroke.Thickness = 1
+    fStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     fStroke.Parent = flyout
 
     local fLayout = Instance.new("UIListLayout")
@@ -1586,9 +1634,28 @@ function UIModule:CreateDropdown(parent, opts)
     fPad.PaddingBottom = UDim.new(0, 4)
     fPad.Parent = flyout
 
+    -- Helper to elevate parents so subsequent cards never cover the dropdown
+    local function SetElevation(elevate)
+        local z = elevate and 100 or 1
+        row.ZIndex = z
+        dropBtn.ZIndex = z + 1
+        flyout.ZIndex = z + 10
+
+        -- Elevate Section card if present
+        local cur = row.Parent
+        while cur and cur ~= self.ScreenGui do
+            if cur:IsA("Frame") and string.find(cur.Name, "Section_") then
+                cur.ZIndex = elevate and 90 or 1
+                break
+            end
+            cur = cur.Parent
+        end
+    end
+
     local function ToggleFlyout(open)
         isOpen = open
         if isOpen then
+            SetElevation(true)
             flyout.Visible = true
             local targetH = math.min(#options * 26 + 8, 140)
             Tween(arrowIcon, TweenInfo.new(0.2), { Rotation = 180 })
@@ -1601,7 +1668,10 @@ function UIModule:CreateDropdown(parent, opts)
                 Size = UDim2.new(1, 0, 0, 0)
             })
             tw.Completed:Connect(function()
-                if not isOpen then flyout.Visible = false end
+                if not isOpen then
+                    flyout.Visible = false
+                    SetElevation(false)
+                end
             end)
         end
     end
@@ -1623,7 +1693,7 @@ function UIModule:CreateDropdown(parent, opts)
             optBtn.TextColor3 = (opt == selected) and THEME.TextPrimary or THEME.TextSecondary
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
             optBtn.AutoButtonColor = false
-            optBtn.ZIndex = 51
+            optBtn.ZIndex = 125
             optBtn.Parent = flyout
 
             local oCorner = Instance.new("UICorner")
@@ -1670,7 +1740,7 @@ function UIModule:CreateDropdown(parent, opts)
 end
 
 -- ==============================================================================
---                               WIDGET: INPUT
+--                               WIDGET: INPUT (Overflow Protected)
 -- ==============================================================================
 function UIModule:CreateInput(parent, opts)
     parent = ResolveParent(parent)
@@ -1685,6 +1755,7 @@ function UIModule:CreateInput(parent, opts)
     row.Size = UDim2.new(1, 0, 0, 38)
     row.BackgroundColor3 = THEME.ItemBg
     row.BorderSizePixel = 0
+    row.ClipsDescendants = true
     row.Parent = parent
 
     local rowCorner = Instance.new("UICorner")
@@ -1694,6 +1765,7 @@ function UIModule:CreateInput(parent, opts)
     local rowStroke = Instance.new("UIStroke")
     rowStroke.Color = THEME.BorderSubtle
     rowStroke.Thickness = 1
+    rowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     rowStroke.Parent = row
 
     local rowPad = Instance.new("UIPadding")
@@ -1711,8 +1783,10 @@ function UIModule:CreateInput(parent, opts)
     titleLabel.TextColor3 = THEME.TextPrimary
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    titleLabel.ClipsDescendants = true
     titleLabel.Parent = row
 
+    -- Box Container with strict clipping so long input text never overflows
     local boxFrame = Instance.new("Frame")
     boxFrame.Name = "BoxContainer"
     boxFrame.Size = UDim2.new(0.55, 0, 0, 26)
@@ -1720,6 +1794,7 @@ function UIModule:CreateInput(parent, opts)
     boxFrame.AnchorPoint = Vector2.new(1, 0.5)
     boxFrame.BackgroundColor3 = THEME.CardBg
     boxFrame.BorderSizePixel = 0
+    boxFrame.ClipsDescendants = true
     boxFrame.Parent = row
 
     local bCorner = Instance.new("UICorner")
@@ -1729,12 +1804,17 @@ function UIModule:CreateInput(parent, opts)
     local bStroke = Instance.new("UIStroke")
     bStroke.Color = THEME.BorderSubtle
     bStroke.Thickness = 1
+    bStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     bStroke.Parent = boxFrame
+
+    local bPad = Instance.new("UIPadding")
+    bPad.PaddingLeft = UDim.new(0, 8)
+    bPad.PaddingRight = UDim.new(0, 8)
+    bPad.Parent = boxFrame
 
     local textBox = Instance.new("TextBox")
     textBox.Name = "InputBox"
-    textBox.Size = UDim2.new(1, -16, 1, 0)
-    textBox.Position = UDim2.new(0, 8, 0, 0)
+    textBox.Size = UDim2.new(1, 0, 1, 0)
     textBox.BackgroundTransparency = 1
     textBox.Text = def
     textBox.PlaceholderText = placeholder
@@ -1744,6 +1824,7 @@ function UIModule:CreateInput(parent, opts)
     textBox.TextColor3 = THEME.TextPrimary
     textBox.TextXAlignment = Enum.TextXAlignment.Left
     textBox.ClearTextOnFocus = false
+    textBox.ClipsDescendants = true
     textBox.Parent = boxFrame
 
     textBox.Focused:Connect(function()
@@ -1778,6 +1859,7 @@ function UIModule:CreateCheckbox(parent, opts)
     row.BorderSizePixel = 0
     row.Text = ""
     row.AutoButtonColor = false
+    row.ClipsDescendants = true
     row.Parent = parent
 
     local rowCorner = Instance.new("UICorner")
@@ -1787,6 +1869,7 @@ function UIModule:CreateCheckbox(parent, opts)
     local rowStroke = Instance.new("UIStroke")
     rowStroke.Color = THEME.BorderSubtle
     rowStroke.Thickness = 1
+    rowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     rowStroke.Parent = row
 
     local rowPad = Instance.new("UIPadding")
@@ -1822,6 +1905,7 @@ function UIModule:CreateCheckbox(parent, opts)
     local bStroke = Instance.new("UIStroke")
     bStroke.Color = THEME.BorderSubtle
     bStroke.Thickness = 1
+    bStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     bStroke.Parent = box
 
     local checkIcon = Instance.new("ImageLabel")
@@ -1889,6 +1973,8 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
     row.Size = UDim2.new(1, 0, 0, 38)
     row.BackgroundColor3 = THEME.ItemBg
     row.BorderSizePixel = 0
+    row.ClipsDescendants = false
+    row.ZIndex = 1
     row.Parent = parent
 
     local rowCorner = Instance.new("UICorner")
@@ -1898,6 +1984,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
     local rowStroke = Instance.new("UIStroke")
     rowStroke.Color = THEME.BorderSubtle
     rowStroke.Thickness = 1
+    rowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     rowStroke.Parent = row
 
     local rowPad = Instance.new("UIPadding")
@@ -1924,6 +2011,8 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
     controlBox.AnchorPoint = Vector2.new(1, 0.5)
     controlBox.BackgroundColor3 = THEME.CardBg
     controlBox.BorderSizePixel = 0
+    controlBox.ClipsDescendants = false
+    controlBox.ZIndex = 2
     controlBox.Parent = row
 
     local cbCorner = Instance.new("UICorner")
@@ -1933,6 +2022,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
     local cbStroke = Instance.new("UIStroke")
     cbStroke.Color = THEME.BorderSubtle
     cbStroke.Thickness = 1
+    cbStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     cbStroke.Parent = controlBox
 
     if isMulti then
@@ -1967,7 +2057,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
         triggerBtn.Text = ""
         triggerBtn.Parent = controlBox
 
-        -- Multi-select flyout
+        -- Multi-select flyout (Elevated)
         local flyout = Instance.new("Frame")
         flyout.Name = "MultiFlyout"
         flyout.Size = UDim2.new(1, 0, 0, 0)
@@ -1976,7 +2066,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
         flyout.BorderSizePixel = 0
         flyout.ClipsDescendants = true
         flyout.Visible = false
-        flyout.ZIndex = 60
+        flyout.ZIndex = 120
         flyout.Parent = controlBox
 
         local mfc = Instance.new("UICorner")
@@ -1986,6 +2076,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
         local mfs = Instance.new("UIStroke")
         mfs.Color = THEME.BorderFocus
         mfs.Thickness = 1
+        mfs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         mfs.Parent = flyout
 
         local mfl = Instance.new("UIListLayout")
@@ -2001,6 +2092,22 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
         mfp.Parent = flyout
 
         local isOpen = false
+
+        local function SetElevation(elevate)
+            local z = elevate and 100 or 1
+            row.ZIndex = z
+            controlBox.ZIndex = z + 1
+            flyout.ZIndex = z + 10
+
+            local cur = row.Parent
+            while cur and cur ~= self.ScreenGui do
+                if cur:IsA("Frame") and string.find(cur.Name, "Section_") then
+                    cur.ZIndex = elevate and 90 or 1
+                    break
+                end
+                cur = cur.Parent
+            end
+        end
 
         local function HasSelected(item)
             for _, v in ipairs(selectedList) do
@@ -2027,7 +2134,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
                 optBtn.TextColor3 = isChecked and THEME.TextPrimary or THEME.TextSecondary
                 optBtn.TextXAlignment = Enum.TextXAlignment.Left
                 optBtn.AutoButtonColor = false
-                optBtn.ZIndex = 61
+                optBtn.ZIndex = 125
                 optBtn.Parent = flyout
 
                 local opc = Instance.new("UICorner")
@@ -2056,6 +2163,7 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
         local function ToggleFlyout(open)
             isOpen = open
             if isOpen then
+                SetElevation(true)
                 RefreshFlyout()
                 flyout.Visible = true
                 local targetH = math.min(#options * 26 + 8, 140)
@@ -2069,7 +2177,10 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
                     Size = UDim2.new(1, 0, 0, 0)
                 })
                 tw.Completed:Connect(function()
-                    if not isOpen then flyout.Visible = false end
+                    if not isOpen then
+                        flyout.Visible = false
+                        SetElevation(false)
+                    end
                 end)
             end
         end
@@ -2154,6 +2265,7 @@ function UIModule:CreateInfoLabel(parent, opts)
     local cStroke = Instance.new("UIStroke")
     cStroke.Color = THEME.BorderSubtle
     cStroke.Thickness = 1
+    cStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     cStroke.Parent = card
 
     local cPad = Instance.new("UIPadding")
