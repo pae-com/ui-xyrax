@@ -1,5 +1,5 @@
 -- ==============================================================================
---                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.5.1)
+--                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.4.1)
 --    Gold Subtitle Badge | Overflow Prevention | Dropdown Elevation | Pure ASCII
 -- ==============================================================================
 
