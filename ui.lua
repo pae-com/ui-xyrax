@@ -991,16 +991,17 @@ function UIModule:CreateSection(tab, opts)
     itemLayout.Padding = UDim.new(0, 8)
     itemLayout.Parent = container
 
+    local window = self
     local sectionObj = {
         Card = card,
         Container = container,
-        Window = self,
+        Window = window,
     }
     setmetatable(sectionObj, {
         __index = function(t, k)
             if UIModule[k] then
                 return function(_, ...)
-                    return UIModule[k](<self, container, ...>)
+                    return UIModule[k](<window, container, ...>)
                 end
             end
             return container[k]
