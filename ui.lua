@@ -1,10 +1,10 @@
 --[[
-	ReaperX UI Library (Official WindUI Icons Engine Integration)
-	- Powered by: Footagesus/WindUI & Footagesus/Icons (MIT License)
-	- Supports 1,500+ WindUI Lucide Icons by name string
-	- Optional Icons/Logos on Buttons, Tabs, and Sections
-	- Modern Crimson Ambient Dot Close Button (No 'X')
-	- Spring/Exponential Transitions, Toast Notifications, & Resizing
+	ReaperX UI Library (Complete All-in-One Edition)
+	- Widgets: Toggles, Sliders, Dropdowns, Text Inputs, Buttons, Checkboxes
+	- WindUI 1,500+ Lucide Icons Integration (Footagesus/WindUI)
+	- Toast Notifications (Window:Notify)
+	- Ambient Crimson Dot Close Button (No 'X')
+	- Spring/Exponential Transitions & Corner Resizing (◢)
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -30,6 +30,7 @@ local Theme = {
 
 	ToggleOff   = Color3.fromRGB(42, 42, 48),
 	SliderTrack = Color3.fromRGB(32, 32, 38),
+	Dropdown    = Color3.fromRGB(28, 28, 34),
 	CloseDot    = Color3.fromRGB(80, 25, 25),
 }
 
@@ -55,25 +56,17 @@ local FallbackIcons = {
 	["flame"]     = "rbxassetid://10747378135",
 	["copy"]      = "rbxassetid://10747377488",
 	["trash"]     = "rbxassetid://10747383471",
+	["dropdown"]  = "rbxassetid://10747384978",
 }
 
 function UIModule:GetIcon(iconName)
 	if not iconName or iconName == "" then return nil end
 	local str = tostring(iconName)
-	if string.find(str, "rbxassetid://") or string.find(str, "rbxthumb://") then
-		return str
-	end
+	if string.find(str, "rbxassetid://") or string.find(str, "rbxthumb://") then return str end
 	local num = str:match("^%d+$")
-	if num then
-		return "rbxthumb://type=Asset&id=" .. num .. "&w=150&h=150"
-	end
+	if num then return "rbxthumb://type=Asset&id=" .. num .. "&w=150&h=150" end
 	local cleanName = string.lower(str):gsub("%s+", "-")
-	
-	-- 1. Check WindUI Lucide Database (1,500+ icons)
-	if WindUIIcons and WindUIIcons[cleanName] then
-		return WindUIIcons[cleanName]
-	end
-	-- 2. Check local fallback
+	if WindUIIcons and WindUIIcons[cleanName] then return WindUIIcons[cleanName] end
 	return FallbackIcons[cleanName] or FallbackIcons[cleanName:gsub("-", "")] or nil
 end
 
@@ -133,11 +126,7 @@ function UIModule.new(config)
 		ZIndex = 100,
 		Parent = gui,
 	})
-	Create("UIListLayout", {
-		VerticalAlignment = Enum.VerticalAlignment.Bottom,
-		Padding = UDim.new(0, 8),
-		Parent = notifContainer,
-	})
+	Create("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Bottom, Padding = UDim.new(0, 8), Parent = notifContainer })
 	self.NotifContainer = notifContainer
 
 	-- Main Window Frame
@@ -180,7 +169,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Monogram Emblem [R]
+	-- Emblem [R]
 	local emblem = Create("Frame", {
 		Size = UDim2.new(0, 30, 0, 30),
 		Position = UDim2.new(0, 14, 0.5, 0),
@@ -254,7 +243,7 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- Ambient Crimson Dot (Close Button - No 'X')
+	-- Ambient Crimson Dot (Close Button)
 	local closeBtn = Create("TextButton", {
 		Size = UDim2.new(0, 24, 0, 24),
 		Position = UDim2.new(1, -14, 0.5, 0),
@@ -493,7 +482,7 @@ function UIModule:Notify(config)
 	end)
 end
 
--- ====================== TABS (WINDUI ICONS SUPPORT) ======================
+-- ====================== TABS ======================
 function UIModule:CreateTabLabel(text)
 	Create("TextLabel", {
 		Size = UDim2.new(1, 0, 0, 22),
@@ -698,7 +687,7 @@ function UIModule:CreateSection(tab, config)
 	return section
 end
 
--- ====================== BUTTONS (WINDUI ICONS SUPPORT) ======================
+-- ====================== 1. BUTTONS ======================
 function UIModule:CreateButton(section, config)
 	config = config or {}
 	local resolvedIcon = self:GetIcon(config.Icon or config.Logo)
@@ -713,14 +702,13 @@ function UIModule:CreateButton(section, config)
 	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = btn })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = btn })
 
-	local iconImg
 	local textStart = 0
 	local textAlignment = Enum.TextXAlignment.Center
 
 	if resolvedIcon then
 		textStart = 34
 		textAlignment = Enum.TextXAlignment.Left
-		iconImg = Create("ImageLabel", {
+		Create("ImageLabel", {
 			Size = UDim2.new(0, 16, 0, 16),
 			Position = UDim2.new(0, 12, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
@@ -731,7 +719,7 @@ function UIModule:CreateButton(section, config)
 		})
 	end
 
-	local btnLabel = Create("TextLabel", {
+	Create("TextLabel", {
 		Size = UDim2.new(1, -(textStart + 8), 1, 0),
 		Position = UDim2.new(0, textStart, 0, 0),
 		BackgroundTransparency = 1,
@@ -743,12 +731,8 @@ function UIModule:CreateButton(section, config)
 		Parent = btn,
 	})
 
-	btn.MouseEnter:Connect(function()
-		TweenExp(btn, { BackgroundColor3 = Theme.AccentDark }, 0.15)
-	end)
-	btn.MouseLeave:Connect(function()
-		TweenExp(btn, { BackgroundColor3 = Theme.ModalBg }, 0.15)
-	end)
+	btn.MouseEnter:Connect(function() TweenExp(btn, { BackgroundColor3 = Theme.AccentDark }, 0.15) end)
+	btn.MouseLeave:Connect(function() TweenExp(btn, { BackgroundColor3 = Theme.ModalBg }, 0.15) end)
 	btn.MouseButton1Click:Connect(function()
 		TweenExp(btn, { Size = UDim2.new(1, -4, 0, 32) }, 0.05).Completed:Connect(function()
 			TweenExp(btn, { Size = UDim2.new(1, 0, 0, 34) }, 0.08)
@@ -758,7 +742,7 @@ function UIModule:CreateButton(section, config)
 	return btn
 end
 
--- ====================== TOGGLE, SLIDER & CHECKBOX ======================
+-- ====================== 2. TOGGLES ======================
 function UIModule:CreateToggle(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Toggle"
@@ -833,6 +817,7 @@ function UIModule:CreateToggle(section, config)
 	return { Set = SetState, Get = function() return self.Flags[flag] end }
 end
 
+-- ====================== 3. SLIDERS ======================
 function UIModule:CreateSlider(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Slider"
@@ -958,6 +943,197 @@ function UIModule:CreateSlider(section, config)
 	}
 end
 
+-- ====================== 4. DROPDOWNS ======================
+function UIModule:CreateDropdown(section, config)
+	config = config or {}
+	local flag = config.Flag or config.Name or "Dropdown"
+	local options = config.Options or { "Option 1", "Option 2" }
+	local default = config.Default or options[1]
+	self.Flags[flag] = default
+
+	local container = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 36),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Parent = section,
+	})
+
+	local header = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundTransparency = 1,
+		Parent = container,
+	})
+
+	Create("TextLabel", {
+		Size = UDim2.new(0.4, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Text = config.Name or "Dropdown",
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = header,
+	})
+
+	local box = Create("TextButton", {
+		Size = UDim2.new(0.58, 0, 0, 30),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
+		BackgroundColor3 = Theme.Dropdown,
+		Text = "   " .. tostring(default),
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		AutoButtonColor = false,
+		Parent = header,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = box })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = box })
+
+	local arrow = Create("ImageLabel", {
+		Size = UDim2.new(0, 16, 0, 16),
+		Position = UDim2.new(1, -22, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundTransparency = 1,
+		Image = self:GetIcon("dropdown") or "rbxassetid://10747384978",
+		ImageColor3 = Theme.TextDim,
+		Parent = box,
+	})
+
+	local listFrame = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 0),
+		Position = UDim2.new(0, 0, 0, 40),
+		BackgroundColor3 = Theme.Dropdown,
+		BorderSizePixel = 0,
+		Visible = false,
+		ClipsDescendants = true,
+		Parent = container,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = listFrame })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = listFrame })
+
+	local listLayout = Create("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, Parent = listFrame })
+	Create("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), Parent = listFrame })
+
+	local isOpen = false
+	local function Populate()
+		for _, child in ipairs(listFrame:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+
+		for _, opt in ipairs(options) do
+			local itemBtn = Create("TextButton", {
+				Size = UDim2.new(1, 0, 0, 26),
+				BackgroundColor3 = (opt == self.Flags[flag]) and Theme.AccentDark or Theme.Dropdown,
+				BackgroundTransparency = (opt == self.Flags[flag]) and 0.4 or 1,
+				Text = "   " .. tostring(opt),
+				TextColor3 = (opt == self.Flags[flag]) and Theme.Text or Theme.TextDim,
+				Font = Enum.Font.Gotham,
+				TextSize = 12,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				AutoButtonColor = false,
+				Parent = listFrame,
+			})
+			Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = itemBtn })
+
+			itemBtn.MouseButton1Click:Connect(function()
+				self.Flags[flag] = opt
+				box.Text = "   " .. tostring(opt)
+				isOpen = false
+				TweenExp(arrow, { Rotation = 0 }, 0.15)
+				listFrame.Visible = false
+				Populate()
+				if config.Callback then config.Callback(opt) end
+			end)
+		end
+		listFrame.Size = UDim2.new(1, 0, 0, #options * 28 + 8)
+	end
+
+	Populate()
+
+	box.MouseButton1Click:Connect(function()
+		isOpen = not isOpen
+		listFrame.Visible = isOpen
+		TweenExp(arrow, { Rotation = isOpen and 180 or 0 }, 0.2)
+	end)
+
+	return {
+		Set = function(v)
+			self.Flags[flag] = v
+			box.Text = "   " .. tostring(v)
+			Populate()
+			if config.Callback then config.Callback(v) end
+		end,
+		Get = function() return self.Flags[flag] end,
+		Refresh = function(newOpts)
+			options = newOpts or options
+			Populate()
+		end,
+	}
+end
+
+-- ====================== 5. TEXT INPUTS ======================
+function UIModule:CreateInput(section, config)
+	config = config or {}
+	local flag = config.Flag or config.Name or "Input"
+	local default = config.Default or ""
+	self.Flags[flag] = default
+
+	local row = Create("Frame", {
+		Size = UDim2.new(1, 0, 0, 36),
+		BackgroundTransparency = 1,
+		Parent = section,
+	})
+
+	Create("TextLabel", {
+		Size = UDim2.new(0.4, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Text = config.Name or "Input",
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = row,
+	})
+
+	local box = Create("TextBox", {
+		Size = UDim2.new(0.58, 0, 0, 30),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
+		BackgroundColor3 = Theme.Dropdown,
+		Text = default,
+		PlaceholderText = config.Placeholder or "Enter text...",
+		PlaceholderColor3 = Theme.TextDim,
+		TextColor3 = Theme.Text,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		ClearTextOnFocus = false,
+		Parent = row,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = box })
+	local boxStroke = Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = box })
+
+	box.Focused:Connect(function()
+		TweenExp(boxStroke, { Color = Theme.Accent }, 0.15)
+	end)
+	box.FocusLost:Connect(function(enterPressed)
+		TweenExp(boxStroke, { Color = Theme.Border }, 0.15)
+		self.Flags[flag] = box.Text
+		if config.Callback then config.Callback(box.Text, enterPressed) end
+	end)
+
+	return {
+		Set = function(text)
+			self.Flags[flag] = text
+			box.Text = text
+			if config.Callback then config.Callback(text) end
+		end,
+		Get = function() return self.Flags[flag] end
+	}
+end
+
+-- ====================== 6. CHECKBOXES ======================
 function UIModule:CreateCheckbox(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Checkbox"
@@ -1019,7 +1195,7 @@ function UIModule:CreateCheckbox(section, config)
 	return { Set = SetState, Get = function() return self.Flags[flag] end }
 end
 
--- ====================== MULTI-SELECT ADJUSTMENT MODAL ======================
+-- ====================== 7. MULTI-SELECT ADJUSTMENT MODAL ======================
 function UIModule:OpenMultiSelectWindow(config)
 	config = config or {}
 	local title = config.Title or "Adjustments"
@@ -1152,7 +1328,7 @@ function UIModule:OpenMultiSelectWindow(config)
 		local box = Create("Frame", {
 			Size = UDim2.new(0, 18, 0, 18),
 			Position = UDim2.new(0, 10, 0.5, 0),
-			AnchorPoint = Vector2.new(0, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundColor3 = currentSelected[optName] and Theme.Accent or Theme.ToggleOff,
 			BorderSizePixel = 0,
 			ZIndex = 54,
