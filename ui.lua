@@ -1,13 +1,12 @@
 -- ==============================================================================
---                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.2)
---         Refined Rounded Corners | Polished Buttons | Zero Text Overlap
+--                       XYRAX HUB - EXECUTIVE macOS EDITION (V3.3)
+--              Crash Fix | Rounded Corners | Zero Text Overlap
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local HttpService = game:GetService("HttpService")
 
 local UIModule = {}
 UIModule.__index = UIModule
@@ -58,6 +57,8 @@ local FallbackIcons = {
     info = "rbxassetid://10709790369",
     search = "rbxassetid://10709790948",
     settings = "rbxassetid://10709791053",
+    sliders = "rbxassetid://10709791053",
+    bell = "rbxassetid://10709789960",
     check = "rbxassetid://93898873302694",
     x = "rbxassetid://110786993356448",
     chevron = "rbxassetid://10709790184",
@@ -109,6 +110,16 @@ local function Tween(instance, info, properties)
     local tw = TweenService:Create(instance, info, properties)
     tw:Play()
     return tw
+end
+
+-- Robust Parent Resolution (Instance or Table wrapper)
+local function ResolveParent(parent)
+    if typeof(parent) == "Instance" then
+        return parent
+    elseif type(parent) == "table" then
+        return parent.Container or parent.Instance or parent[1] or parent
+    end
+    return parent
 end
 
 -- ==============================================================================
@@ -612,6 +623,7 @@ end
 
 function UIModule:CreateTab(name, iconName)
     local tab = {
+        Window = self,
         Name = name,
         Icon = iconName,
         Sections = {},
@@ -642,14 +654,14 @@ function UIModule:CreateTab(name, iconName)
     -- Dual Column Layout Grid
     local colContainer = Instance.new("Frame")
     colContainer.Name = "Columns"
-    colContainer.Size = UDim2.new(1, 0, 1, 0)
+    colContainer.Size = UDim2.new(1, 0, 0, 0)
     colContainer.AutomaticSize = Enum.AutomaticSize.Y
     colContainer.BackgroundTransparency = 1
     colContainer.Parent = page
 
     local leftCol = Instance.new("Frame")
     leftCol.Name = "LeftColumn"
-    leftCol.Size = UDim2.new(0.5, -7, 1, 0)
+    leftCol.Size = UDim2.new(0.5, -7, 0, 0)
     leftCol.Position = UDim2.new(0, 0, 0, 0)
     leftCol.AutomaticSize = Enum.AutomaticSize.Y
     leftCol.BackgroundTransparency = 1
@@ -657,12 +669,13 @@ function UIModule:CreateTab(name, iconName)
 
     local leftLayout = Instance.new("UIListLayout")
     leftLayout.FillDirection = Enum.FillDirection.Vertical
+    leftLayout.SortOrder = Enum.SortOrder.LayoutOrder
     leftLayout.Padding = UDim.new(0, 12)
     leftLayout.Parent = leftCol
 
     local rightCol = Instance.new("Frame")
     rightCol.Name = "RightColumn"
-    rightCol.Size = UDim2.new(0.5, -7, 1, 0)
+    rightCol.Size = UDim2.new(0.5, -7, 0, 0)
     rightCol.Position = UDim2.new(0.5, 7, 0, 0)
     rightCol.AutomaticSize = Enum.AutomaticSize.Y
     rightCol.BackgroundTransparency = 1
@@ -670,6 +683,7 @@ function UIModule:CreateTab(name, iconName)
 
     local rightLayout = Instance.new("UIListLayout")
     rightLayout.FillDirection = Enum.FillDirection.Vertical
+    rightLayout.SortOrder = Enum.SortOrder.LayoutOrder
     rightLayout.Padding = UDim.new(0, 12)
     rightLayout.Parent = rightCol
 
@@ -786,6 +800,11 @@ function UIModule:CreateTab(name, iconName)
         tab.SetActive(true)
     end
 
+    -- Support direct tab:CreateSection(opts)
+    function tab:CreateSection(opts)
+        return self.Window:CreateSection(self, opts)
+    end
+
     return tab
 end
 
@@ -843,6 +862,7 @@ function UIModule:CreateSection(tab, opts)
 
     local cardLayout = Instance.new("UIListLayout")
     cardLayout.FillDirection = Enum.FillDirection.Vertical
+    cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
     cardLayout.Padding = UDim.new(0, 10)
     cardLayout.Parent = card
 
@@ -854,22 +874,18 @@ function UIModule:CreateSection(tab, opts)
     headerFrame.BackgroundTransparency = 1
     headerFrame.Parent = card
 
-    local hLayout = Instance.new("UIListLayout")
-    hLayout.FillDirection = Enum.FillDirection.Horizontal
-    hLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    hLayout.HorizontalAlignment = Enum.HorizontalAlignment.SpaceBetween
-    hLayout.Parent = headerFrame
-
-    -- Title + Subtitle stack
+    -- Title + Subtitle stack (Left anchored, leaves room for toggle if present)
     local titleStack = Instance.new("Frame")
     titleStack.Name = "TitleStack"
-    titleStack.Size = UDim2.new(1, opts.Toggle and -56 or 0, 0, 0)
+    titleStack.Size = UDim2.new(1, opts.Toggle and -54 or 0, 0, 0)
+    titleStack.Position = UDim2.new(0, 0, 0, 0)
     titleStack.AutomaticSize = Enum.AutomaticSize.Y
     titleStack.BackgroundTransparency = 1
     titleStack.Parent = headerFrame
 
     local stackLayout = Instance.new("UIListLayout")
     stackLayout.FillDirection = Enum.FillDirection.Vertical
+    stackLayout.SortOrder = Enum.SortOrder.LayoutOrder
     stackLayout.Padding = UDim.new(0, 2)
     stackLayout.Parent = titleStack
 
@@ -922,14 +938,16 @@ function UIModule:CreateSection(tab, opts)
         subLabel.Parent = titleStack
     end
 
-    -- Optional Section Master Toggle
+    -- Optional Section Master Toggle (Right anchored)
     if opts.Toggle then
         local isToggled = opts.ToggleDefault or false
         local callback = opts.ToggleCallback or function() end
 
         local togglePill = Instance.new("TextButton")
         togglePill.Name = "SectionToggle"
-        togglePill.Size = UDim2.new(0, 44, 0, 24)
+        togglePill.Size = UDim2.new(0, 44, 0, 22)
+        togglePill.Position = UDim2.new(1, 0, 0.5, 0)
+        togglePill.AnchorPoint = Vector2.new(1, 0.5)
         togglePill.BackgroundColor3 = isToggled and THEME.Accent or THEME.ItemBg
         togglePill.BorderSizePixel = 0
         togglePill.Text = ""
@@ -947,8 +965,8 @@ function UIModule:CreateSection(tab, opts)
 
         local knob = Instance.new("Frame")
         knob.Name = "Knob"
-        knob.Size = UDim2.new(0, 18, 0, 18)
-        knob.Position = isToggled and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+        knob.Size = UDim2.new(0, 16, 0, 16)
+        knob.Position = isToggled and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
         knob.AnchorPoint = Vector2.new(0, 0.5)
         knob.BackgroundColor3 = isToggled and Color3.fromRGB(15, 15, 20) or THEME.TextSecondary
         knob.BorderSizePixel = 0
@@ -960,7 +978,7 @@ function UIModule:CreateSection(tab, opts)
 
         togglePill.MouseButton1Click:Connect(function()
             isToggled = not isToggled
-            local targetPos = isToggled and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+            local targetPos = isToggled and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
             local targetBg = isToggled and THEME.Accent or THEME.ItemBg
             local targetKnobBg = isToggled and Color3.fromRGB(15, 15, 20) or THEME.TextSecondary
 
@@ -991,6 +1009,7 @@ function UIModule:CreateSection(tab, opts)
 
     local itemLayout = Instance.new("UIListLayout")
     itemLayout.FillDirection = Enum.FillDirection.Vertical
+    itemLayout.SortOrder = Enum.SortOrder.LayoutOrder
     itemLayout.Padding = UDim.new(0, 8)
     itemLayout.Parent = container
 
@@ -998,9 +1017,10 @@ function UIModule:CreateSection(tab, opts)
 end
 
 -- ==============================================================================
---                               WIDGET: BUTTON (Refined Aesthetics)
+--                               WIDGET: BUTTON
 -- ==============================================================================
 function UIModule:CreateButton(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Button"
     local desc = opts.Description
@@ -1061,6 +1081,7 @@ function UIModule:CreateButton(parent, opts)
     local textLayout = Instance.new("UIListLayout")
     textLayout.FillDirection = Enum.FillDirection.Vertical
     textLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    textLayout.SortOrder = Enum.SortOrder.LayoutOrder
     textLayout.Padding = UDim.new(0, 2)
     textLayout.Parent = textContainer
 
@@ -1134,6 +1155,7 @@ end
 --                               WIDGET: TOGGLE
 -- ==============================================================================
 function UIModule:CreateToggle(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Toggle"
     local desc = opts.Description
@@ -1177,6 +1199,7 @@ function UIModule:CreateToggle(parent, opts)
     local textLayout = Instance.new("UIListLayout")
     textLayout.FillDirection = Enum.FillDirection.Vertical
     textLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    textLayout.SortOrder = Enum.SortOrder.LayoutOrder
     textLayout.Padding = UDim.new(0, 2)
     textLayout.Parent = textContainer
 
@@ -1269,9 +1292,10 @@ function UIModule:CreateToggle(parent, opts)
 end
 
 -- ==============================================================================
---                               WIDGET: SLIDER (Zero Overlap Layout)
+--                               WIDGET: SLIDER
 -- ==============================================================================
 function UIModule:CreateSlider(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Slider"
     local min = opts.Min or 0
@@ -1445,6 +1469,7 @@ end
 --                               WIDGET: DROPDOWN
 -- ==============================================================================
 function UIModule:CreateDropdown(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Dropdown"
     local options = opts.Options or {}
@@ -1648,6 +1673,7 @@ end
 --                               WIDGET: INPUT
 -- ==============================================================================
 function UIModule:CreateInput(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Input"
     local placeholder = opts.Placeholder or "Type here..."
@@ -1739,6 +1765,7 @@ end
 --                               WIDGET: CHECKBOX
 -- ==============================================================================
 function UIModule:CreateCheckbox(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Checkbox"
     local state = opts.Default or false
@@ -1832,22 +1859,33 @@ function UIModule:CreateCheckbox(parent, opts)
 end
 
 -- ==============================================================================
---                               WIDGET: ADJUSTMENT PICKER (STEPPER)
+--                               WIDGET: ADJUSTMENT PICKER (Multi-Select & Stepper)
 -- ==============================================================================
 function UIModule:CreateAdjustmentPicker(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local title = opts.Title or "Adjustment"
     local options = opts.Options or { "Option 1", "Option 2", "Option 3" }
+    local callback = opts.Callback or function() end
+
+    -- Check if Selected is a list (multi-select) or a single value
+    local isMulti = type(opts.Selected) == "table"
+    local selectedList = {}
+    if isMulti then
+        for _, v in ipairs(opts.Selected) do
+            table.insert(selectedList, v)
+        end
+    end
+
     local selIndex = 1
-    if opts.Selected then
+    if not isMulti and opts.Selected then
         for i, opt in ipairs(options) do
             if opt == opts.Selected then selIndex = i break end
         end
     end
-    local callback = opts.Callback or function() end
 
     local row = Instance.new("Frame")
-    row.Name = "Stepper_" .. title
+    row.Name = "Adjustment_" .. title
     row.Size = UDim2.new(1, 0, 0, 38)
     row.BackgroundColor3 = THEME.ItemBg
     row.BorderSizePixel = 0
@@ -1879,82 +1917,216 @@ function UIModule:CreateAdjustmentPicker(parent, opts)
     titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
     titleLabel.Parent = row
 
-    -- Stepper Controls Frame
-    local stepperFrame = Instance.new("Frame")
-    stepperFrame.Name = "StepperFrame"
-    stepperFrame.Size = UDim2.new(0.55, 0, 0, 26)
-    stepperFrame.Position = UDim2.new(1, 0, 0.5, 0)
-    stepperFrame.AnchorPoint = Vector2.new(1, 0.5)
-    stepperFrame.BackgroundColor3 = THEME.CardBg
-    stepperFrame.BorderSizePixel = 0
-    stepperFrame.Parent = row
+    local controlBox = Instance.new("Frame")
+    controlBox.Name = "ControlBox"
+    controlBox.Size = UDim2.new(0.55, 0, 0, 26)
+    controlBox.Position = UDim2.new(1, 0, 0.5, 0)
+    controlBox.AnchorPoint = Vector2.new(1, 0.5)
+    controlBox.BackgroundColor3 = THEME.CardBg
+    controlBox.BorderSizePixel = 0
+    controlBox.Parent = row
 
-    local sfCorner = Instance.new("UICorner")
-    sfCorner.CornerRadius = THEME.RadiusSmall
-    sfCorner.Parent = stepperFrame
+    local cbCorner = Instance.new("UICorner")
+    cbCorner.CornerRadius = THEME.RadiusSmall
+    cbCorner.Parent = controlBox
 
-    local sfStroke = Instance.new("UIStroke")
-    sfStroke.Color = THEME.BorderSubtle
-    sfStroke.Thickness = 1
-    sfStroke.Parent = stepperFrame
+    local cbStroke = Instance.new("UIStroke")
+    cbStroke.Color = THEME.BorderSubtle
+    cbStroke.Thickness = 1
+    cbStroke.Parent = controlBox
 
-    local prevBtn = Instance.new("TextButton")
-    prevBtn.Name = "PrevBtn"
-    prevBtn.Size = UDim2.new(0, 24, 1, 0)
-    prevBtn.Position = UDim2.new(0, 0, 0, 0)
-    prevBtn.BackgroundTransparency = 1
-    prevBtn.Text = "‹"
-    prevBtn.Font = Enum.Font.GothamBold
-    prevBtn.TextSize = 16
-    prevBtn.TextColor3 = THEME.TextSecondary
-    prevBtn.Parent = stepperFrame
+    if isMulti then
+        -- Multi-Select Pill Button with Dropdown
+        local curLabel = Instance.new("TextLabel")
+        curLabel.Name = "CurrentLabel"
+        curLabel.Size = UDim2.new(1, -24, 1, 0)
+        curLabel.Position = UDim2.new(0, 8, 0, 0)
+        curLabel.BackgroundTransparency = 1
+        curLabel.Text = string.format("%d selected", #selectedList)
+        curLabel.Font = Enum.Font.GothamMedium
+        curLabel.TextSize = 11
+        curLabel.TextColor3 = THEME.TextPrimary
+        curLabel.TextXAlignment = Enum.TextXAlignment.Left
+        curLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        curLabel.Parent = controlBox
 
-    local nextBtn = Instance.new("TextButton")
-    nextBtn.Name = "NextBtn"
-    nextBtn.Size = UDim2.new(0, 24, 1, 0)
-    nextBtn.Position = UDim2.new(1, -24, 0, 0)
-    nextBtn.BackgroundTransparency = 1
-    nextBtn.Text = "›"
-    nextBtn.Font = Enum.Font.GothamBold
-    nextBtn.TextSize = 16
-    nextBtn.TextColor3 = THEME.TextSecondary
-    nextBtn.Parent = stepperFrame
+        local chevron = Instance.new("ImageLabel")
+        chevron.Name = "Chevron"
+        chevron.Size = UDim2.new(0, 12, 0, 12)
+        chevron.Position = UDim2.new(1, -8, 0.5, 0)
+        chevron.AnchorPoint = Vector2.new(1, 0.5)
+        chevron.BackgroundTransparency = 1
+        chevron.Image = FallbackIcons["chevron"]
+        chevron.ImageColor3 = THEME.TextSecondary
+        chevron.Parent = controlBox
 
-    local curLabel = Instance.new("TextLabel")
-    curLabel.Name = "CurrentLabel"
-    curLabel.Size = UDim2.new(1, -52, 1, 0)
-    curLabel.Position = UDim2.new(0, 26, 0, 0)
-    curLabel.BackgroundTransparency = 1
-    curLabel.Text = tostring(options[selIndex] or "")
-    curLabel.Font = Enum.Font.GothamMedium
-    curLabel.TextSize = 11
-    curLabel.TextColor3 = THEME.TextPrimary
-    curLabel.TextTruncate = Enum.TextTruncate.AtEnd
-    curLabel.Parent = stepperFrame
+        local triggerBtn = Instance.new("TextButton")
+        triggerBtn.Name = "Trigger"
+        triggerBtn.Size = UDim2.new(1, 0, 1, 0)
+        triggerBtn.BackgroundTransparency = 1
+        triggerBtn.Text = ""
+        triggerBtn.Parent = controlBox
 
-    local function Step(dir)
-        selIndex = selIndex + dir
-        if selIndex < 1 then selIndex = #options end
-        if selIndex > #options then selIndex = 1 end
-        curLabel.Text = tostring(options[selIndex])
-        pcall(callback, options[selIndex], selIndex)
+        -- Multi-select flyout
+        local flyout = Instance.new("Frame")
+        flyout.Name = "MultiFlyout"
+        flyout.Size = UDim2.new(1, 0, 0, 0)
+        flyout.Position = UDim2.new(0, 0, 1, 4)
+        flyout.BackgroundColor3 = THEME.CardBg
+        flyout.BorderSizePixel = 0
+        flyout.ClipsDescendants = true
+        flyout.Visible = false
+        flyout.ZIndex = 60
+        flyout.Parent = controlBox
+
+        local mfc = Instance.new("UICorner")
+        mfc.CornerRadius = THEME.RadiusItem
+        mfc.Parent = flyout
+
+        local mfs = Instance.new("UIStroke")
+        mfs.Color = THEME.BorderFocus
+        mfs.Thickness = 1
+        mfs.Parent = flyout
+
+        local mfl = Instance.new("UIListLayout")
+        mfl.FillDirection = Enum.FillDirection.Vertical
+        mfl.Padding = UDim.new(0, 2)
+        mfl.Parent = flyout
+
+        local mfp = Instance.new("UIPadding")
+        mfp.PaddingLeft = UDim.new(0, 4)
+        mfp.PaddingRight = UDim.new(0, 4)
+        mfp.PaddingTop = UDim.new(0, 4)
+        mfp.PaddingBottom = UDim.new(0, 4)
+        mfp.Parent = flyout
+
+        local isOpen = false
+
+        local function HasSelected(item)
+            for _, v in ipairs(selectedList) do
+                if v == item then return true end
+            end
+            return false
+        end
+
+        local function RefreshFlyout()
+            for _, ch in ipairs(flyout:GetChildren()) do
+                if ch:IsA("TextButton") then ch:Destroy() end
+            end
+
+            for _, opt in ipairs(options) do
+                local isChecked = HasSelected(opt)
+                local optBtn = Instance.new("TextButton")
+                optBtn.Name = "Opt_" .. tostring(opt)
+                optBtn.Size = UDim2.new(1, 0, 0, 24)
+                optBtn.BackgroundColor3 = isChecked and THEME.ItemBg or THEME.CardBg
+                optBtn.BorderSizePixel = 0
+                optBtn.Text = (isChecked and "✓ " or "   ") .. tostring(opt)
+                optBtn.Font = Enum.Font.GothamMedium
+                optBtn.TextSize = 11
+                optBtn.TextColor3 = isChecked and THEME.TextPrimary or THEME.TextSecondary
+                optBtn.TextXAlignment = Enum.TextXAlignment.Left
+                optBtn.AutoButtonColor = false
+                optBtn.ZIndex = 61
+                optBtn.Parent = flyout
+
+                local opc = Instance.new("UICorner")
+                opc.CornerRadius = THEME.RadiusSmall
+                opc.Parent = optBtn
+
+                local opp = Instance.new("UIPadding")
+                opp.PaddingLeft = UDim.new(0, 8)
+                opp.Parent = optBtn
+
+                optBtn.MouseButton1Click:Connect(function()
+                    if HasSelected(opt) then
+                        for idx, v in ipairs(selectedList) do
+                            if v == opt then table.remove(selectedList, idx) break end
+                        end
+                    else
+                        table.insert(selectedList, opt)
+                    end
+                    curLabel.Text = string.format("%d selected", #selectedList)
+                    RefreshFlyout()
+                    pcall(callback, selectedList)
+                end)
+            end
+        end
+
+        local function ToggleFlyout(open)
+            isOpen = open
+            if isOpen then
+                RefreshFlyout()
+                flyout.Visible = true
+                local targetH = math.min(#options * 26 + 8, 140)
+                Tween(chevron, TweenInfo.new(0.2), { Rotation = 180 })
+                Tween(flyout, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(1, 0, 0, targetH)
+                })
+            else
+                Tween(chevron, TweenInfo.new(0.2), { Rotation = 0 })
+                local tw = Tween(flyout, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+                    Size = UDim2.new(1, 0, 0, 0)
+                })
+                tw.Completed:Connect(function()
+                    if not isOpen then flyout.Visible = false end
+                end)
+            end
+        end
+
+        triggerBtn.MouseButton1Click:Connect(function()
+            ToggleFlyout(not isOpen)
+        end)
+    else
+        -- Standard Single Stepper
+        local prevBtn = Instance.new("TextButton")
+        prevBtn.Name = "PrevBtn"
+        prevBtn.Size = UDim2.new(0, 24, 1, 0)
+        prevBtn.Position = UDim2.new(0, 0, 0, 0)
+        prevBtn.BackgroundTransparency = 1
+        prevBtn.Text = "‹"
+        prevBtn.Font = Enum.Font.GothamBold
+        prevBtn.TextSize = 16
+        prevBtn.TextColor3 = THEME.TextSecondary
+        prevBtn.Parent = controlBox
+
+        local nextBtn = Instance.new("TextButton")
+        nextBtn.Name = "NextBtn"
+        nextBtn.Size = UDim2.new(0, 24, 1, 0)
+        nextBtn.Position = UDim2.new(1, -24, 0, 0)
+        nextBtn.BackgroundTransparency = 1
+        nextBtn.Text = "›"
+        nextBtn.Font = Enum.Font.GothamBold
+        nextBtn.TextSize = 16
+        nextBtn.TextColor3 = THEME.TextSecondary
+        nextBtn.Parent = controlBox
+
+        local curLabel = Instance.new("TextLabel")
+        curLabel.Name = "CurrentLabel"
+        curLabel.Size = UDim2.new(1, -52, 1, 0)
+        curLabel.Position = UDim2.new(0, 26, 0, 0)
+        curLabel.BackgroundTransparency = 1
+        curLabel.Text = tostring(options[selIndex] or "")
+        curLabel.Font = Enum.Font.GothamMedium
+        curLabel.TextSize = 11
+        curLabel.TextColor3 = THEME.TextPrimary
+        curLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        curLabel.Parent = controlBox
+
+        local function Step(dir)
+            selIndex = selIndex + dir
+            if selIndex < 1 then selIndex = #options end
+            if selIndex > #options then selIndex = 1 end
+            curLabel.Text = tostring(options[selIndex])
+            pcall(callback, options[selIndex], selIndex)
+        end
+
+        prevBtn.MouseButton1Click:Connect(function() Step(-1) end)
+        nextBtn.MouseButton1Click:Connect(function() Step(1) end)
     end
 
-    prevBtn.MouseButton1Click:Connect(function() Step(-1) end)
-    nextBtn.MouseButton1Click:Connect(function() Step(1) end)
-
     return {
-        Set = function(_, val)
-            for i, opt in ipairs(options) do
-                if opt == val then
-                    selIndex = i
-                    curLabel.Text = tostring(options[selIndex])
-                    pcall(callback, options[selIndex], selIndex)
-                    break
-                end
-            end
-        end,
-        Get = function(_) return options[selIndex] end,
+        Get = function(_) return isMulti and selectedList or options[selIndex] end,
     }
 end
 
@@ -1962,6 +2134,7 @@ end
 --                               WIDGET: INFO LABEL
 -- ==============================================================================
 function UIModule:CreateInfoLabel(parent, opts)
+    parent = ResolveParent(parent)
     opts = opts or {}
     local text = opts.Text or ""
     local icon = opts.Icon or "info"
