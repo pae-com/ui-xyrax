@@ -1,6 +1,6 @@
 -- ==============================================================================
 --                            XYRAX HUB UI LIBRARY
---                     Tailored with WindUI Lucide Icons
+--                     Fixed & Stabilized with WindUI Icons
 -- ==============================================================================
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -12,8 +12,11 @@ UIModule.__index = UIModule
 
 -- ==================== WINDUI LUCIDE ICON ENGINE ====================
 local WindUIIcons = nil
-pcall(function()
-    WindUIIcons = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/refs/heads/main/lucide/dist/Icons.lua"))()
+task.spawn(function()
+    pcall(function()
+        local rawCode = game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/refs/heads/main/lucide/dist/Icons.lua")
+        WindUIIcons = loadstring(rawCode)()
+    end)
 end)
 
 local FallbackIcons = {
@@ -28,51 +31,61 @@ local FallbackIcons = {
     eye = "rbxassetid://10709789790",
     sliders = "rbxassetid://10709789700",
     bell = "rbxassetid://10709789600",
-    check = "rbxassetid://10709789500",
-    chevron = "rbxassetid://10709789400"
+    check = "rbxassetid://10709789500"
 }
 
 function UIModule:GetIcon(iconName)
     if not iconName or iconName == "" then return nil end
-    if string.find(iconName, "rbxassetid://") or string.find(iconName, "http") then
-        return { Asset = iconName }
+    
+    -- ถ้าส่ง asset id มาตรงๆ
+    if string.find(tostring(iconName), "rbxassetid://") or string.find(tostring(iconName), "http") or tonumber(iconName) then
+        local id = tostring(iconName)
+        if tonumber(id) then id = "rbxassetid://" .. id end
+        return { Asset = id, RectOffset = Vector2.new(0, 0), RectSize = Vector2.new(0, 0) }
     end
+
+    local cleanName = string.lower(tostring(iconName)):gsub("%s+", "")
+
+    -- ค้นหาใน WindUI Icons
     if WindUIIcons and type(WindUIIcons) == "table" then
-        local raw = WindUIIcons[iconName] or WindUIIcons[string.lower(iconName)]
+        local raw = WindUIIcons[cleanName] or WindUIIcons[iconName]
         if raw then
             local assetId = raw[1] or raw.Image or raw.id
-            if type(assetId) == "number" then
+            if type(assetId) == "number" or (type(assetId) == "string" and not string.find(assetId, "rbxassetid://")) then
                 assetId = "rbxassetid://" .. tostring(assetId)
             end
             local rectOffset = raw[2] or raw.ImageRectOffset or Vector2.new(0, 0)
             local rectSize = raw[3] or raw.ImageRectSize or Vector2.new(0, 0)
             return {
                 Asset = assetId,
-                ImageRectOffset = rectOffset,
-                ImageRectSize = rectSize
+                RectOffset = rectOffset,
+                RectSize = rectSize
             }
         end
     end
-    if FallbackIcons[string.lower(iconName)] then
-        return { Asset = FallbackIcons[string.lower(iconName)] }
+
+    -- ค้นหาใน Fallback
+    if FallbackIcons[cleanName] then
+        return {
+            Asset = FallbackIcons[cleanName],
+            RectOffset = Vector2.new(0, 0),
+            RectSize = Vector2.new(0, 0)
+        }
     end
+
     return nil
 end
 
 local function applyIconToLabel(imageLabel, iconData, defaultColor)
-    if not iconData then
+    if not iconData or not iconData.Asset or iconData.Asset == "" then
         imageLabel.Visible = false
         return
     end
-    imageLabel.Image = iconData.Asset or ""
-    if iconData.ImageRectOffset and iconData.ImageRectSize and iconData.ImageRectSize ~= Vector2.new(0,0) then
-        imageLabel.ImageRectOffset = iconData.ImageRectOffset
-        imageLabel.ImageRectSize = iconData.ImageRectSize
-    else
-        imageLabel.ImageRectOffset = Vector2.new(0, 0)
-        imageLabel.ImageRectSize = Vector2.new(0, 0)
-    end
+    imageLabel.Image = iconData.Asset
+    imageLabel.ImageRectOffset = iconData.RectOffset or Vector2.new(0, 0)
+    imageLabel.ImageRectSize = iconData.RectSize or Vector2.new(0, 0)
     imageLabel.ImageColor3 = defaultColor or Color3.fromRGB(220, 220, 230)
+    imageLabel.ScaleType = Enum.ScaleType.Fit
     imageLabel.Visible = true
 end
 
@@ -102,9 +115,9 @@ function UIModule.new(config)
 
     self.ScreenGui = screenGui
 
-    -- Notification Container
+    -- Notifications Toast Container
     local notifContainer = Instance.new("Frame")
-    notifContainer.Name = "NotificationContainer"
+    notifContainer.Name = "Notifications"
     notifContainer.Size = UDim2.new(0, 300, 1, -40)
     notifContainer.Position = UDim2.new(1, -320, 0, 20)
     notifContainer.BackgroundTransparency = 1
@@ -155,17 +168,31 @@ function UIModule.new(config)
     titleBarBottom.BorderSizePixel = 0
     titleBarBottom.Parent = titleBar
 
-    -- LOGO & EMBLEM
+    -- LOGO & TITLE CONTAINER (Layout แนวยาว ไม่ทับกันแน่นอน)
+    local headerGroup = Instance.new("Frame")
+    headerGroup.Name = "HeaderGroup"
+    headerGroup.Size = UDim2.new(1, -70, 1, 0)
+    headerGroup.Position = UDim2.new(0, 14, 0, 0)
+    headerGroup.BackgroundTransparency = 1
+    headerGroup.Parent = titleBar
+
+    local hLayout = Instance.new("UIListLayout")
+    hLayout.FillDirection = Enum.FillDirection.Horizontal
+    hLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    hLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    hLayout.Padding = UDim.new(0, 10)
+    hLayout.Parent = headerGroup
+
     local logoAsset = config.Logo or ""
     if logoAsset ~= "" then
         local logoImg = Instance.new("ImageLabel")
         logoImg.Name = "TitleLogo"
+        logoImg.LayoutOrder = 1
         logoImg.Size = UDim2.new(0, 26, 0, 26)
-        logoImg.Position = UDim2.new(0, 14, 0.5, -13)
         logoImg.BackgroundTransparency = 1
         logoImg.Image = logoAsset
         logoImg.ScaleType = Enum.ScaleType.Fit
-        logoImg.Parent = titleBar
+        logoImg.Parent = headerGroup
 
         local logoCorner = Instance.new("UICorner")
         logoCorner.CornerRadius = UDim.new(0, 6)
@@ -173,11 +200,11 @@ function UIModule.new(config)
     else
         local emblem = Instance.new("Frame")
         emblem.Name = "Emblem"
+        emblem.LayoutOrder = 1
         emblem.Size = UDim2.new(0, 24, 0, 24)
-        emblem.Position = UDim2.new(0, 14, 0.5, -12)
         emblem.BackgroundColor3 = Color3.fromRGB(230, 35, 55)
         emblem.BorderSizePixel = 0
-        emblem.Parent = titleBar
+        emblem.Parent = headerGroup
 
         local emblemCorner = Instance.new("UICorner")
         emblemCorner.CornerRadius = UDim.new(0, 6)
@@ -203,15 +230,31 @@ function UIModule.new(config)
 
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(0, 200, 1, 0)
-    titleLabel.Position = UDim2.new(0, 48, 0, 0)
+    titleLabel.LayoutOrder = 2
+    titleLabel.AutomaticSize = Enum.AutomaticSize.X
+    titleLabel.Size = UDim2.new(0, 0, 1, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = config.Title or "Xyrax Hub"
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextSize = 14
     titleLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = titleBar
+    titleLabel.Parent = headerGroup
+
+    if config.Subtitle then
+        local subLabel = Instance.new("TextLabel")
+        subLabel.Name = "Subtitle"
+        subLabel.LayoutOrder = 3
+        subLabel.AutomaticSize = Enum.AutomaticSize.X
+        subLabel.Size = UDim2.new(0, 0, 1, 0)
+        subLabel.BackgroundTransparency = 1
+        subLabel.Text = "•  " .. config.Subtitle
+        subLabel.Font = Enum.Font.Gotham
+        subLabel.TextSize = 11
+        subLabel.TextColor3 = Color3.fromRGB(130, 130, 145)
+        subLabel.TextXAlignment = Enum.TextXAlignment.Left
+        subLabel.Parent = headerGroup
+    end
 
     -- Close Button (Ambient Crimson Dot)
     local closeBtn = Instance.new("TextButton")
@@ -417,7 +460,7 @@ end
 function UIModule:CreateTab(name, iconName)
     local tabBtn = Instance.new("TextButton")
     tabBtn.Name = "Tab_" .. name
-    tabBtn.Size = UDim2.new(1, 0, 0, 34)
+    tabBtn.Size = UDim2.new(1, 0, 0, 36)
     tabBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     tabBtn.BorderSizePixel = 0
     tabBtn.Text = ""
@@ -442,20 +485,28 @@ function UIModule:CreateTab(name, iconName)
     iconLabel.Size = UDim2.new(0, 18, 0, 18)
     iconLabel.Position = UDim2.new(0, 10, 0.5, -9)
     iconLabel.BackgroundTransparency = 1
+    iconLabel.ScaleType = Enum.ScaleType.Fit
     iconLabel.Parent = tabBtn
 
-    local iconData = self:GetIcon(iconName)
-    if iconData then
-        applyIconToLabel(iconLabel, iconData, Color3.fromRGB(140, 140, 155))
-    else
-        iconLabel.Visible = false
-    end
+    -- โหลดไอคอน (รอถ้า WindUIIcons กำลังดึงผ่านเน็ต)
+    task.spawn(function()
+        local waited = 0
+        while not WindUIIcons and waited < 2 do
+            task.wait(0.1)
+            waited = waited + 0.1
+        end
+        local iconData = self:GetIcon(iconName)
+        if iconData then
+            applyIconToLabel(iconLabel, iconData, Color3.fromRGB(140, 140, 155))
+        else
+            iconLabel.Visible = false
+        end
+    end)
 
-    local textOffset = (iconData and 34) or 12
     local label = Instance.new("TextLabel")
     label.Name = "Label"
-    label.Size = UDim2.new(1, -textOffset - 6, 1, 0)
-    label.Position = UDim2.new(0, textOffset, 0, 0)
+    label.Size = UDim2.new(1, -38, 1, 0)
+    label.Position = UDim2.new(0, 36, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
     label.Font = Enum.Font.GothamMedium
@@ -512,7 +563,7 @@ function UIModule:CreateTab(name, iconName)
         tabData.Indicator.Visible = true
         TweenService:Create(tabBtn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(26, 26, 34) }):Play()
         TweenService:Create(label, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
-        if iconData then
+        if iconLabel.Visible then
             TweenService:Create(iconLabel, TweenInfo.new(0.2), { ImageColor3 = Color3.fromRGB(230, 35, 55) }):Play()
         end
         self.ActiveTab = tabData
@@ -535,7 +586,8 @@ function UIModule:CreateSection(tab, config)
 
     local card = Instance.new("Frame")
     card.Name = "Section_" .. (config.Title or "Card")
-    card.Size = UDim2.new(1, 0, 0, 40)
+    card.AutomaticSize = Enum.AutomaticSize.Y
+    card.Size = UDim2.new(1, 0, 0, 0)
     card.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
     card.BorderSizePixel = 0
     card.Parent = page
@@ -570,20 +622,26 @@ function UIModule:CreateSection(tab, config)
         headerIcon.Size = UDim2.new(0, 14, 0, 14)
         headerIcon.Position = UDim2.new(0, 0, 0.5, -7)
         headerIcon.BackgroundTransparency = 1
+        headerIcon.ScaleType = Enum.ScaleType.Fit
         headerIcon.Parent = header
 
-        local iconData = self:GetIcon(config.Icon)
-        local hOffset = 0
-        if iconData then
-            applyIconToLabel(headerIcon, iconData, Color3.fromRGB(230, 35, 55))
-            hOffset = 20
-        else
-            headerIcon.Visible = false
-        end
+        task.spawn(function()
+            local waited = 0
+            while not WindUIIcons and waited < 2 do
+                task.wait(0.1)
+                waited = waited + 0.1
+            end
+            local iconData = self:GetIcon(config.Icon)
+            if iconData then
+                applyIconToLabel(headerIcon, iconData, Color3.fromRGB(230, 35, 55))
+            else
+                headerIcon.Visible = false
+            end
+        end)
 
         local titleLbl = Instance.new("TextLabel")
-        titleLbl.Size = UDim2.new(1, -hOffset, 1, 0)
-        titleLbl.Position = UDim2.new(0, hOffset, 0, 0)
+        titleLbl.Size = UDim2.new(1, -22, 1, 0)
+        titleLbl.Position = UDim2.new(0, 22, 0, 0)
         titleLbl.BackgroundTransparency = 1
         titleLbl.Text = string.upper(config.Title)
         titleLbl.Font = Enum.Font.GothamBold
@@ -592,10 +650,6 @@ function UIModule:CreateSection(tab, config)
         titleLbl.TextXAlignment = Enum.TextXAlignment.Left
         titleLbl.Parent = header
     end
-
-    cardLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        card.Size = UDim2.new(1, 0, 0, cardLayout.AbsoluteContentSize.Y + 22)
-    end)
 
     return card
 end
@@ -621,17 +675,24 @@ function UIModule:CreateButton(parent, config)
     iconLabel.Size = UDim2.new(0, 16, 0, 16)
     iconLabel.Position = UDim2.new(0, 12, 0.5, -8)
     iconLabel.BackgroundTransparency = 1
+    iconLabel.ScaleType = Enum.ScaleType.Fit
     iconLabel.Parent = btn
 
-    local iconData = self:GetIcon(config.Icon)
-    local leftOffset = 12
-    if iconData then
-        applyIconToLabel(iconLabel, iconData, Color3.fromRGB(220, 220, 230))
-        leftOffset = 36
-    else
-        iconLabel.Visible = false
-    end
+    task.spawn(function()
+        local waited = 0
+        while not WindUIIcons and waited < 2 do
+            task.wait(0.1)
+            waited = waited + 0.1
+        end
+        local iconData = self:GetIcon(config.Icon)
+        if iconData then
+            applyIconToLabel(iconLabel, iconData, Color3.fromRGB(220, 220, 230))
+        else
+            iconLabel.Visible = false
+        end
+    end)
 
+    local leftOffset = (config.Icon and 36) or 12
     local titleLbl = Instance.new("TextLabel")
     titleLbl.Size = UDim2.new(1, -leftOffset - 12, 0, 18)
     titleLbl.Position = UDim2.new(0, leftOffset, 0, (config.Description and 6) or 9)
