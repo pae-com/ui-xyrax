@@ -1,6 +1,7 @@
 --[[
-	ReaperX Style UI Library (Fixed Logo & Transparent Close Button)
-	- Top-Right: Auto-Resolving Decal Logo & Transparent Close Button (87463403317153)
+	ReaperX Style UI Library (Pure Vector / No External Logo Required)
+	- Branding: Native Red Gradient Monogram Emblem [R] & PRO Badge
+	- Top-Right: Clean Transparent Close Button (✕)
 	- Bottom-Right: Corner Drag Resizer (◢)
 	- Settings: Multi-Select Popup Window (No dropdown / No icons)
 ]]
@@ -31,26 +32,12 @@ local Theme = {
 	Dropdown    = Color3.fromRGB(28, 28, 33),
 }
 
--- ฟังก์ชันแปลง Decal ID จาก Roblox Store ให้กลายเป็น Image URL ที่แสดงผลได้จริง 100%
-local function GetAssetImage(id)
-	local numId = tostring(id):match("%d+")
-	if not numId then return id end
-
-	-- ใช้ rbxthumb ซึ่งรองรับ Decal ID จาก Creator Store โดยตรง
-	return "rbxthumb://type=Asset&id=" .. numId .. "&w=420&h=420"
-end
-
 UIModule.Icons = {
-	Logo     = GetAssetImage("137660498980177"),
-	Close    = GetAssetImage("87463403317153"),
-
 	Swords   = "rbxassetid://10747377716",
 	Skull    = "rbxassetid://10747384022",
 	Cart     = "rbxassetid://10747381958",
 	Globe    = "rbxassetid://10747378330",
 	Settings = "rbxassetid://10747383136",
-
-	Star     = "rbxassetid://10747383049",
 	Check    = "rbxassetid://10747376789",
 }
 local Icons = UIModule.Icons
@@ -65,11 +52,7 @@ local function Create(class, props)
 end
 
 local function Tween(obj, props, time)
-	local t = TweenService:Create(
-		obj,
-		TweenInfo.new(time or 0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
-		props
-	)
+	local t = TweenService:Create(obj, TweenInfo.new(time or 0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), props)
 	t:Play()
 	return t
 end
@@ -128,7 +111,7 @@ function UIModule.new(config)
 		end
 	end)
 
-	-- Title Bar
+	-- ========== TITLE BAR ==========
 	local titleBar = Create("Frame", {
 		Name = "TitleBar",
 		Size = UDim2.new(1, 0, 0, 52),
@@ -146,21 +129,72 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
+	-- 1. Native Emblem Badge [R] (ไม่ต้องใช้ไฟล์รูป ไม่พังแน่นอน)
+	local emblem = Create("Frame", {
+		Size = UDim2.new(0, 30, 0, 30),
+		Position = UDim2.new(0, 14, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = Theme.Accent,
+		BorderSizePixel = 0,
+		Parent = titleBar,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 7), Parent = emblem })
+	ApplyGradient(emblem, Theme.Accent, Theme.AccentDark)
+
 	Create("TextLabel", {
-		Size = UDim2.new(1, -160, 0, 20),
-		Position = UDim2.new(0, 18, 0, 8),
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Text = "R",
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.GothamBold,
+		TextSize = 16,
+		Parent = emblem,
+	})
+
+	-- Title + PRO Tag
+	local titleRow = Create("Frame", {
+		Size = UDim2.new(1, -150, 0, 20),
+		Position = UDim2.new(0, 52, 0, 8),
+		BackgroundTransparency = 1,
+		Parent = titleBar,
+	})
+
+	local titleLbl = Create("TextLabel", {
+		Size = UDim2.new(0, 0, 1, 0),
+		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
 		Text = self.Title,
 		TextColor3 = Theme.Text,
 		Font = Enum.Font.GothamBold,
 		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = titleBar,
+		Parent = titleRow,
+	})
+
+	local proBadge = Create("Frame", {
+		Size = UDim2.new(0, 34, 0, 16),
+		Position = UDim2.new(1, 8, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = Theme.AccentDark,
+		BackgroundTransparency = 0.3,
+		Parent = titleLbl,
+	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = proBadge })
+	Create("UIStroke", { Color = Theme.Accent, Thickness = 0.8, Parent = proBadge })
+
+	Create("TextLabel", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Text = "PRO",
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.GothamBold,
+		TextSize = 9,
+		Parent = proBadge,
 	})
 
 	Create("TextLabel", {
-		Size = UDim2.new(1, -160, 0, 16),
-		Position = UDim2.new(0, 18, 0, 28),
+		Size = UDim2.new(1, -150, 0, 16),
+		Position = UDim2.new(0, 52, 0, 28),
 		BackgroundTransparency = 1,
 		Text = self.Subtitle,
 		TextColor3 = Theme.TextDim,
@@ -170,49 +204,25 @@ function UIModule.new(config)
 		Parent = titleBar,
 	})
 
-	-- ========== TOP-RIGHT (LOGO & CLEAN CLOSE BUTTON) ==========
-	local topRightArea = Create("Frame", {
-		Size = UDim2.new(0, 80, 1, 0),
-		Position = UDim2.new(1, -14, 0, 0),
-		AnchorPoint = Vector2.new(1, 0),
-		BackgroundTransparency = 1,
-		Parent = titleBar,
-	})
-	Create("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		HorizontalAlignment = Enum.HorizontalAlignment.Right,
-		VerticalAlignment = Enum.VerticalAlignment.Center,
-		Padding = UDim.new(0, 12),
-		Parent = topRightArea,
-	})
-
-	-- 1. Logo (ไม่มีกล่องทึบ โชว์รูปเต็มพร้อมมุมโค้งมน)
-	local logoImg = Create("ImageLabel", {
-		Name = "HeaderLogo",
+	-- 2. Minimal Transparent Close Button (ไม่มีกล่องทึบ ชี้แล้วเรืองแสงสีแดง)
+	local closeBtn = Create("TextButton", {
 		Size = UDim2.new(0, 26, 0, 26),
+		Position = UDim2.new(1, -14, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
-		Image = Icons.Logo,
-		ScaleType = Enum.ScaleType.Fit,
-		Parent = topRightArea,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = logoImg })
-
-	-- 2. Close Button (โปร่งใส ไม่มีกล่องเหลี่ยม ชี้แล้วเรืองแสงสีแดง)
-	local closeBtn = Create("ImageButton", {
-		Name = "CloseButton",
-		Size = UDim2.new(0, 18, 0, 18),
-		BackgroundTransparency = 1,
-		Image = Icons.Close,
-		ImageColor3 = Theme.TextDim,
-		ScaleType = Enum.ScaleType.Fit,
-		Parent = topRightArea,
+		Text = "✕",
+		TextColor3 = Theme.TextDim,
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		AutoButtonColor = false,
+		Parent = titleBar,
 	})
 
 	closeBtn.MouseEnter:Connect(function()
-		Tween(closeBtn, { ImageColor3 = Theme.Accent })
+		Tween(closeBtn, { TextColor3 = Theme.Accent, TextSize = 16 }, 0.15)
 	end)
 	closeBtn.MouseLeave:Connect(function()
-		Tween(closeBtn, { ImageColor3 = Theme.TextDim })
+		Tween(closeBtn, { TextColor3 = Theme.TextDim, TextSize = 14 }, 0.15)
 	end)
 	closeBtn.MouseButton1Click:Connect(function()
 		gui:Destroy()
