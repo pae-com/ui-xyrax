@@ -19,7 +19,7 @@ local THEME = {
     CardInner    = Color3.fromRGB(25, 25, 33),      -- Inner control tray
     Recessed     = Color3.fromRGB(15, 15, 20),      -- Input/Slider trough
     
-    -- Accent: High-End Velvet Crimson (Matches reference image)
+    -- Accent: Velvet Crimson (Matches reference image)
     Accent       = Color3.fromRGB(225, 35, 55),
     AccentGlow   = Color3.fromRGB(255, 60, 80),
     AccentDark   = Color3.fromRGB(140, 20, 35),
@@ -179,7 +179,7 @@ function UIModule.new(config)
     notifLayout.Parent = notifContainer
     self.NotifContainer = notifContainer
 
-    -- Main Frame
+    -- Main Window
     local main = Instance.new("Frame")
     main.Name = "MainWindow"
     main.Size = config.Size or UDim2.new(0, 840, 0, 560)
@@ -200,7 +200,7 @@ function UIModule.new(config)
     mainStroke.Thickness = 1.2
     mainStroke.Parent = main
 
-    -- Top Border Accent Light
+    -- Top Accent Line
     local topAccentLine = Instance.new("Frame")
     topAccentLine.Size = UDim2.new(1, 0, 0, 2)
     topAccentLine.Position = UDim2.new(0, 0, 0, 0)
@@ -232,7 +232,7 @@ function UIModule.new(config)
     tbDivider.BorderSizePixel = 0
     tbDivider.Parent = titleBar
 
-    -- Stylized Monogram
+    -- Monogram
     local emblem = Instance.new("Frame")
     emblem.Size = UDim2.new(0, 26, 0, 26)
     emblem.Position = UDim2.new(0, 18, 0.5, -13)
@@ -271,7 +271,7 @@ function UIModule.new(config)
     titleLbl.Size = UDim2.new(1, 0, 0, 20)
     titleLbl.Position = UDim2.new(0, 0, 0.5, config.Subtitle and -15 or -10)
     titleLbl.BackgroundTransparency = 1
-    titleLbl.Text = config.Title or "ReaperX"
+    titleLbl.Text = config.Title or "Xyrax Hub"
     titleLbl.Font = Enum.Font.GothamBold
     titleLbl.TextSize = 13
     titleLbl.TextColor3 = THEME.TextHero
@@ -305,7 +305,6 @@ function UIModule.new(config)
     ctrlLayout.Padding = UDim.new(0, 8)
     ctrlLayout.Parent = controls
 
-    -- Minimize Button
     local minBtn = Instance.new("TextButton")
     minBtn.Size = UDim2.new(0, 26, 0, 26)
     minBtn.BackgroundTransparency = 1
@@ -316,7 +315,6 @@ function UIModule.new(config)
     minBtn.AutoButtonColor = false
     minBtn.Parent = controls
 
-    -- Close Button
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 26, 0, 26)
     closeBtn.BackgroundTransparency = 1
@@ -360,7 +358,7 @@ function UIModule.new(config)
         tw.Completed:Connect(function() screenGui:Destroy() end)
     end)
 
-    -- Draggable Handling
+    -- Draggable
     local dragging, dragStart, startPos, dragConn
     titleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -383,7 +381,7 @@ function UIModule.new(config)
         end
     end)
 
-    -- Resizer Handle (◢)
+    -- Resizer Handle
     local resizeHandle = Instance.new("TextButton")
     resizeHandle.Size = UDim2.new(0, 18, 0, 18)
     resizeHandle.Position = UDim2.new(1, -18, 1, -18)
@@ -417,7 +415,6 @@ function UIModule.new(config)
         end
     end)
 
-    -- Toggle Hotkey
     local toggleKey = config.ToggleKey or Enum.KeyCode.RightControl
     UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.KeyCode == toggleKey then
@@ -425,7 +422,7 @@ function UIModule.new(config)
         end
     end)
 
-    -- ==================== SIDEBAR WITH CATEGORIES ====================
+    -- Sidebar
     local sidebar = Instance.new("ScrollingFrame")
     sidebar.Name = "Sidebar"
     sidebar.Size = UDim2.new(0, 180, 1, -50)
@@ -457,7 +454,7 @@ function UIModule.new(config)
 
     self.Sidebar = sidebar
 
-    -- ==================== DUAL-COLUMN CONTENT AREA ====================
+    -- Dual-Column Content Canvas
     local contentArea = Instance.new("Frame")
     contentArea.Name = "ContentArea"
     contentArea.Size = UDim2.new(1, -181, 1, -50)
@@ -473,7 +470,7 @@ function UIModule.new(config)
     return self
 end
 
--- ==================== SIDEBAR CATEGORY HEADER ====================
+-- ==================== SIDEBAR CATEGORIES ====================
 function UIModule:CreateCategory(name)
     local header = Instance.new("TextLabel")
     header.Name = "Category_" .. name
@@ -492,7 +489,7 @@ function UIModule:CreateCategory(name)
     pad.Parent = header
 end
 
--- ==================== TAB SYSTEM (EXECUTIVE CAPSULE) ====================
+-- ==================== TAB SYSTEM ====================
 function UIModule:CreateTab(name, iconName)
     local tabBtn = Instance.new("TextButton")
     tabBtn.Name = "Tab_" .. name
@@ -515,7 +512,6 @@ function UIModule:CreateTab(name, iconName)
     tabGrad.Enabled = false
     tabGrad.Parent = tabBtn
 
-    -- Left Accent Pip
     local pip = Instance.new("Frame")
     pip.Size = UDim2.new(0, 3, 0.6, 0)
     pip.Position = UDim2.new(0, 0, 0.2, 0)
@@ -549,7 +545,6 @@ function UIModule:CreateTab(name, iconName)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = tabBtn
 
-    -- Dual-Column Scroll Page
     local page = Instance.new("ScrollingFrame")
     page.Name = "Page_" .. name
     page.Size = UDim2.new(1, 0, 1, 0)
@@ -562,7 +557,6 @@ function UIModule:CreateTab(name, iconName)
     page.AutomaticCanvasSize = Enum.AutomaticSize.Y
     page.Parent = self.ContentArea
 
-    -- Dual-Column Sub-Containers (Left & Right)
     local dualContainer = Instance.new("Frame")
     dualContainer.Size = UDim2.new(1, 0, 0, 0)
     dualContainer.AutomaticSize = Enum.AutomaticSize.Y
@@ -608,7 +602,8 @@ function UIModule:CreateTab(name, iconName)
         Label = label,
         Icon = icon,
         Pip = pip,
-        Grad = tabGrad
+        Grad = tabGrad,
+        SectionCount = 0 -- Used for smart auto-balancing between Left and Right
     }
 
     local function selectTab()
@@ -644,11 +639,25 @@ function UIModule:CreateTab(name, iconName)
     return tabData
 end
 
--- ==================== MASTER SECTION (WITH EMBEDDED TOGGLE) ====================
+-- ==================== MASTER SECTION WITH AUTO-BALANCING ====================
 function UIModule:CreateSection(tab, config)
     config = config or {}
-    local side = config.Side or "Left"
-    local parentCol = (side == "Right" and tab.ColRight) or tab.ColLeft or tab.Page or tab
+    local parentCol
+
+    if type(tab) == "table" and tab.ColLeft and tab.ColRight then
+        -- Auto-balance across left and right columns if Side is not specified
+        if config.Side == "Right" then
+            parentCol = tab.ColRight
+        elseif config.Side == "Left" then
+            parentCol = tab.ColLeft
+        else
+            -- Smart alternation between Left and Right
+            tab.SectionCount = (tab.SectionCount or 0) + 1
+            parentCol = (tab.SectionCount % 2 == 1) and tab.ColLeft or tab.ColRight
+        end
+    else
+        parentCol = (type(tab) == "table" and tab.Page) or tab
+    end
 
     local card = Instance.new("Frame")
     card.Name = "Card_" .. (config.Title or "Section")
@@ -677,7 +686,6 @@ function UIModule:CreateSection(tab, config)
     cardPad.PaddingRight = UDim.new(0, 12)
     cardPad.Parent = card
 
-    -- Header with Title, Subtitle, Icon & Optional Master Toggle
     if config.Title then
         local hdr = Instance.new("Frame")
         hdr.Name = "Header"
@@ -730,7 +738,6 @@ function UIModule:CreateSection(tab, config)
             subLbl.Parent = titleHolder
         end
 
-        -- Optional Master Toggle Switch in Section Header
         if config.Toggle ~= nil then
             local tState = config.ToggleDefault or false
             local tBtn = Instance.new("TextButton")
@@ -773,6 +780,168 @@ function UIModule:CreateSection(tab, config)
     return card
 end
 
+-- ==================== WIDGET: BUTTON ====================
+function UIModule:CreateButton(parent, config)
+    config = config or {}
+    local container = (type(parent) == "table" and parent.Page) or parent
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, config.Description and 46 or 36)
+    btn.BackgroundColor3 = THEME.CardInner
+    btn.BorderSizePixel = 0
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = container
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = THEME.Border
+    stroke.Parent = btn
+
+    local icon = Instance.new("ImageLabel")
+    icon.Size = UDim2.new(0, 16, 0, 16)
+    icon.Position = UDim2.new(0, 10, 0.5, -8)
+    icon.BackgroundTransparency = 1
+    icon.Parent = btn
+
+    local iconData = self:GetIcon(config.Icon)
+    local offset = 10
+    if iconData then
+        applyIcon(icon, iconData, THEME.TextHero)
+        offset = 34
+    else
+        icon.Visible = false
+    end
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -offset - 10, 0, 18)
+    titleLbl.Position = UDim2.new(0, offset, 0, config.Description and 6 or 9)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = config.Title or "Button"
+    titleLbl.Font = Enum.Font.GothamMedium
+    titleLbl.TextSize = 12
+    titleLbl.TextColor3 = THEME.TextHero
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = btn
+
+    if config.Description then
+        local descLbl = Instance.new("TextLabel")
+        descLbl.Size = UDim2.new(1, -offset - 10, 0, 14)
+        descLbl.Position = UDim2.new(0, offset, 0, 24)
+        descLbl.BackgroundTransparency = 1
+        descLbl.Text = config.Description
+        descLbl.Font = Enum.Font.Gotham
+        descLbl.TextSize = 10
+        descLbl.TextColor3 = THEME.TextMuted
+        descLbl.TextXAlignment = Enum.TextXAlignment.Left
+        descLbl.Parent = btn
+    end
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(32, 32, 42) }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardInner }):Play()
+    end)
+    btn.MouseButton1Click:Connect(function()
+        local orig = btn.Size
+        TweenService:Create(btn, TweenInfo.new(0.08), { Size = UDim2.new(orig.X.Scale, orig.X.Offset - 2, orig.Y.Scale, orig.Y.Offset - 2) }):Play()
+        task.wait(0.08)
+        TweenService:Create(btn, TweenInfo.new(0.08), { Size = orig }):Play()
+        if config.Callback then task.spawn(config.Callback) end
+    end)
+
+    return btn
+end
+
+-- ==================== WIDGET: STANDALONE TOGGLE (FIX FOR CRASH) ====================
+function UIModule:CreateToggle(parent, config)
+    config = config or {}
+    local container = (type(parent) == "table" and parent.Page) or parent
+    local state = config.Default or false
+
+    local row = Instance.new("TextButton")
+    row.Size = UDim2.new(1, 0, 0, config.Description and 46 or 36)
+    row.BackgroundColor3 = THEME.CardInner
+    row.BorderSizePixel = 0
+    row.Text = ""
+    row.AutoButtonColor = false
+    row.Parent = container
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = row
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = THEME.Border
+    stroke.Parent = row
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -60, 0, 18)
+    titleLbl.Position = UDim2.new(0, 10, 0, config.Description and 6 or 9)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = config.Title or "Toggle"
+    titleLbl.Font = Enum.Font.GothamMedium
+    titleLbl.TextSize = 12
+    titleLbl.TextColor3 = THEME.TextHero
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = row
+
+    if config.Description then
+        local descLbl = Instance.new("TextLabel")
+        descLbl.Size = UDim2.new(1, -60, 0, 14)
+        descLbl.Position = UDim2.new(0, 10, 0, 24)
+        descLbl.BackgroundTransparency = 1
+        descLbl.Text = config.Description
+        descLbl.Font = Enum.Font.Gotham
+        descLbl.TextSize = 10
+        descLbl.TextColor3 = THEME.TextMuted
+        descLbl.TextXAlignment = Enum.TextXAlignment.Left
+        descLbl.Parent = row
+    end
+
+    local pill = Instance.new("Frame")
+    pill.Size = UDim2.new(0, 38, 0, 20)
+    pill.Position = UDim2.new(1, -48, 0.5, -10)
+    pill.BackgroundColor3 = state and THEME.Accent or THEME.Recessed
+    pill.BorderSizePixel = 0
+    pill.Parent = row
+
+    local pCorner = Instance.new("UICorner")
+    pCorner.CornerRadius = UDim.new(1, 0)
+    pCorner.Parent = pill
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.BorderSizePixel = 0
+    knob.Parent = pill
+
+    local kCorner = Instance.new("UICorner")
+    kCorner.CornerRadius = UDim.new(1, 0)
+    kCorner.Parent = knob
+
+    local function update(val)
+        state = val
+        local targetColor = state and THEME.Accent or THEME.Recessed
+        local targetPos = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+        TweenService:Create(pill, TweenInfo.new(0.2), { BackgroundColor3 = targetColor }):Play()
+        TweenService:Create(knob, TweenInfo.new(0.2), { Position = targetPos }):Play()
+        if config.Callback then task.spawn(config.Callback, state) end
+    end
+
+    row.MouseButton1Click:Connect(function() update(not state) end)
+
+    return {
+        Set = update,
+        Get = function() return state end
+    }
+end
+
 -- ==================== WIDGET: STEP SLIDER (- / + BUTTONS) ====================
 function UIModule:CreateSlider(parent, config)
     config = config or {}
@@ -790,7 +959,6 @@ function UIModule:CreateSlider(parent, config)
     row.BackgroundTransparency = 1
     row.Parent = container
 
-    -- Top Label Row: Title on Left, Value on Right
     local titleLbl = Instance.new("TextLabel")
     titleLbl.Size = UDim2.new(0.6, 0, 0, 18)
     titleLbl.Position = UDim2.new(0, 0, 0, 2)
@@ -813,7 +981,6 @@ function UIModule:CreateSlider(parent, config)
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
     valLbl.Parent = row
 
-    -- Slider Row: [ - ] [=========TRACK=========] [ + ]
     local minusBtn = Instance.new("TextButton")
     minusBtn.Size = UDim2.new(0, 16, 0, 16)
     minusBtn.Position = UDim2.new(0, 0, 0, 26)
@@ -906,7 +1073,7 @@ function UIModule:CreateSlider(parent, config)
     }
 end
 
--- ==================== WIDGET: COMPACT DROPDOWN ====================
+-- ==================== WIDGET: DROPDOWN ====================
 function UIModule:CreateDropdown(parent, config)
     config = config or {}
     local container = (type(parent) == "table" and parent.Page) or parent
@@ -1098,92 +1265,6 @@ function UIModule:CreateCheckbox(parent, config)
     }
 end
 
--- ==================== WIDGET: STATUS INFO ROW ====================
-function UIModule:CreateInfoLabel(parent, config)
-    config = config or {}
-    local container = (type(parent) == "table" and parent.Page) or parent
-
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 24)
-    row.BackgroundTransparency = 1
-    row.Parent = container
-
-    local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, 14, 0, 14)
-    icon.Position = UDim2.new(0, 0, 0.5, -7)
-    icon.BackgroundTransparency = 1
-    icon.Parent = row
-
-    local iconData = self:GetIcon(config.Icon or "refresh-cw")
-    local offset = 0
-    if iconData then
-        applyIcon(icon, iconData, THEME.TextMuted)
-        offset = 20
-    else
-        icon.Visible = false
-    end
-
-    local textLbl = Instance.new("TextLabel")
-    textLbl.Size = UDim2.new(1, -offset, 1, 0)
-    textLbl.Position = UDim2.new(0, offset, 0, 0)
-    textLbl.BackgroundTransparency = 1
-    textLbl.Text = config.Text or "Status info"
-    textLbl.Font = Enum.Font.Gotham
-    textLbl.TextSize = 11
-    textLbl.TextColor3 = THEME.TextMuted
-    textLbl.TextXAlignment = Enum.TextXAlignment.Left
-    textLbl.Parent = row
-
-    return {
-        Set = function(newText) textLbl.Text = newText end
-    }
-end
-
--- ==================== WIDGET: STANDARD BUTTON ====================
-function UIModule:CreateButton(parent, config)
-    config = config or {}
-    local container = (type(parent) == "table" and parent.Page) or parent
-
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 36)
-    btn.BackgroundColor3 = THEME.CardInner
-    btn.BorderSizePixel = 0
-    btn.Text = ""
-    btn.AutoButtonColor = false
-    btn.Parent = container
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = THEME.Border
-    stroke.Parent = btn
-
-    local titleLbl = Instance.new("TextLabel")
-    titleLbl.Size = UDim2.new(1, -20, 1, 0)
-    titleLbl.Position = UDim2.new(0, 10, 0, 0)
-    titleLbl.BackgroundTransparency = 1
-    titleLbl.Text = config.Title or "Button"
-    titleLbl.Font = Enum.Font.GothamMedium
-    titleLbl.TextSize = 12
-    titleLbl.TextColor3 = THEME.TextHero
-    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    titleLbl.Parent = btn
-
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(32, 32, 42) }):Play()
-    end)
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = THEME.CardInner }):Play()
-    end)
-    btn.MouseButton1Click:Connect(function()
-        if config.Callback then task.spawn(config.Callback) end
-    end)
-
-    return btn
-end
-
 -- ==================== WIDGET: TEXT INPUT ====================
 function UIModule:CreateInput(parent, config)
     config = config or {}
@@ -1239,6 +1320,178 @@ function UIModule:CreateInput(parent, config)
         Set = function(t) tb.Text = t end,
         Get = function() return tb.Text end
     }
+end
+
+-- ==================== WIDGET: ADJUSTMENT PICKER ====================
+function UIModule:CreateAdjustmentPicker(parent, config)
+    config = config or {}
+    local container = (type(parent) == "table" and parent.Page) or parent
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.BackgroundColor3 = THEME.CardInner
+    btn.BorderSizePixel = 0
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = container
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = THEME.Border
+    stroke.Parent = btn
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -20, 1, 0)
+    titleLbl.Position = UDim2.new(0, 10, 0, 0)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = (config.Title or "Picker") .. "  ⚙"
+    titleLbl.Font = Enum.Font.GothamMedium
+    titleLbl.TextSize = 12
+    titleLbl.TextColor3 = THEME.TextHero
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        UIModule:OpenMultiSelectWindow({
+            Title = config.Title or "Select Options",
+            Options = config.Options or {},
+            Selected = config.Selected or {},
+            Callback = config.Callback
+        })
+    end)
+
+    return btn
+end
+
+-- ==================== MODAL: MULTI-SELECT WINDOW ====================
+function UIModule:OpenMultiSelectWindow(config)
+    config = config or {}
+    local screenGui = self.ScreenGui or game.CoreGui:FindFirstChildWhichIsA("ScreenGui")
+    if not screenGui then return end
+
+    local overlay = Instance.new("TextButton")
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.55
+    overlay.Text = ""
+    overlay.AutoButtonColor = false
+    overlay.Parent = screenGui
+
+    local modal = Instance.new("Frame")
+    modal.Size = UDim2.new(0, 320, 0, 360)
+    modal.Position = UDim2.new(0.5, -160, 0.5, -180)
+    modal.BackgroundColor3 = THEME.Canvas
+    modal.BorderSizePixel = 0
+    modal.Parent = overlay
+
+    local modalCorner = Instance.new("UICorner")
+    modalCorner.CornerRadius = UDim.new(0, 10)
+    modalCorner.Parent = modal
+
+    local modalStroke = Instance.new("UIStroke")
+    modalStroke.Color = THEME.Border
+    modalStroke.Parent = modal
+
+    local mTitle = Instance.new("TextLabel")
+    mTitle.Size = UDim2.new(1, -20, 0, 40)
+    mTitle.Position = UDim2.new(0, 14, 0, 0)
+    mTitle.BackgroundTransparency = 1
+    mTitle.Text = config.Title or "Select Options"
+    mTitle.Font = Enum.Font.GothamBold
+    mTitle.TextSize = 13
+    mTitle.TextColor3 = THEME.TextHero
+    mTitle.TextXAlignment = Enum.TextXAlignment.Left
+    mTitle.Parent = modal
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -20, 1, -95)
+    scroll.Position = UDim2.new(0, 10, 0, 42)
+    scroll.BackgroundTransparency = 1
+    scroll.BorderSizePixel = 0
+    scroll.ScrollBarThickness = 2
+    scroll.ScrollBarImageColor3 = THEME.Border
+    scroll.Parent = modal
+
+    local sLayout = Instance.new("UIListLayout")
+    sLayout.Padding = UDim.new(0, 6)
+    sLayout.Parent = scroll
+
+    local selectedMap = {}
+    if config.Selected then
+        for _, v in ipairs(config.Selected) do selectedMap[v] = true end
+    end
+
+    for _, opt in ipairs(config.Options or {}) do
+        local row = Instance.new("TextButton")
+        row.Size = UDim2.new(1, -6, 0, 30)
+        row.BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(36, 20, 26) or THEME.CardBg
+        row.BorderSizePixel = 0
+        row.Text = ""
+        row.AutoButtonColor = false
+        row.Parent = scroll
+
+        local rCorner = Instance.new("UICorner")
+        rCorner.CornerRadius = UDim.new(0, 6)
+        rCorner.Parent = row
+
+        local rText = Instance.new("TextLabel")
+        rText.Size = UDim2.new(1, -30, 1, 0)
+        rText.Position = UDim2.new(0, 10, 0, 0)
+        rText.BackgroundTransparency = 1
+        rText.Text = opt
+        rText.Font = Enum.Font.Gotham
+        rText.TextSize = 11
+        rText.TextColor3 = selectedMap[opt] and THEME.Accent or THEME.TextMuted
+        rText.TextXAlignment = Enum.TextXAlignment.Left
+        rText.Parent = row
+
+        local ind = Instance.new("TextLabel")
+        ind.Size = UDim2.new(0, 20, 1, 0)
+        ind.Position = UDim2.new(1, -24, 0, 0)
+        ind.BackgroundTransparency = 1
+        ind.Text = selectedMap[opt] and "✓" or ""
+        ind.Font = Enum.Font.GothamBold
+        ind.TextSize = 12
+        ind.TextColor3 = THEME.Accent
+        ind.Parent = row
+
+        row.MouseButton1Click:Connect(function()
+            selectedMap[opt] = not selectedMap[opt]
+            ind.Text = selectedMap[opt] and "✓" or ""
+            rText.TextColor3 = selectedMap[opt] and THEME.Accent or THEME.TextMuted
+            row.BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(36, 20, 26) or THEME.CardBg
+        end)
+    end
+
+    scroll.CanvasSize = UDim2.new(0, 0, 0, sLayout.AbsoluteContentSize.Y + 10)
+
+    local doneBtn = Instance.new("TextButton")
+    doneBtn.Size = UDim2.new(1, -20, 0, 32)
+    doneBtn.Position = UDim2.new(0, 10, 1, -40)
+    doneBtn.BackgroundColor3 = THEME.Accent
+    doneBtn.BorderSizePixel = 0
+    doneBtn.Text = "Confirm Selection"
+    doneBtn.Font = Enum.Font.GothamBold
+    doneBtn.TextSize = 12
+    doneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    doneBtn.AutoButtonColor = false
+    doneBtn.Parent = modal
+
+    local doneCorner = Instance.new("UICorner")
+    doneCorner.CornerRadius = UDim.new(0, 6)
+    doneCorner.Parent = doneBtn
+
+    doneBtn.MouseButton1Click:Connect(function()
+        local result = {}
+        for k, v in pairs(selectedMap) do
+            if v then table.insert(result, k) end
+        end
+        if config.Callback then task.spawn(config.Callback, result) end
+        overlay:Destroy()
+    end)
 end
 
 -- ==================== NOTIFICATIONS ====================
