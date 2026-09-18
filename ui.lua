@@ -1,33 +1,64 @@
 --[[
-	MacUI Library - Dark macOS Style
-	ใช้งาน: local UI = require(path.to.MacUI)
+	ReaperX Style UI Library (Full Version)
+	รูปแบบ: Dark / Red Accent / Icons
 ]]
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
-local MacUI = {}
-MacUI.__index = MacUI
+local UIModule = {}
+UIModule.__index = UIModule
 
--- Theme
+-- ====================== THEME & ICONS ======================
 local Theme = {
-	Background = Color3.fromRGB(18, 18, 20),
-	Sidebar = Color3.fromRGB(22, 22, 25),
-	Content = Color3.fromRGB(25, 25, 28),
-	Section = Color3.fromRGB(32, 32, 36),
-	Border = Color3.fromRGB(45, 45, 50),
-	Text = Color3.fromRGB(240, 240, 245),
+	Background = Color3.fromRGB(15, 15, 17),
+	Sidebar = Color3.fromRGB(20, 20, 23),
+	Content = Color3.fromRGB(15, 15, 17),
+	Section = Color3.fromRGB(25, 25, 28),
+	Border = Color3.fromRGB(35, 35, 40),
+	
+	Text = Color3.fromRGB(255, 255, 255),
 	TextDim = Color3.fromRGB(160, 160, 170),
-	Accent = Color3.fromRGB(220, 50, 50),       -- แดงหลัก
-	AccentHover = Color3.fromRGB(255, 70, 70),
-	ToggleOn = Color3.fromRGB(220, 50, 50),
-	ToggleOff = Color3.fromRGB(60, 60, 65),
-	SliderTrack = Color3.fromRGB(50, 50, 55),
-	SliderFill = Color3.fromRGB(220, 50, 50),
-	Dropdown = Color3.fromRGB(35, 35, 40),
+	
+	-- สีหลัก (แดง)
+	Accent = Color3.fromRGB(255, 50, 50),
+	AccentDark = Color3.fromRGB(180, 20, 20),
+	
+	-- สีของ Widget ต่างๆ
+	ToggleOff = Color3.fromRGB(45, 45, 50),
+	SliderTrack = Color3.fromRGB(35, 35, 40),
+	Dropdown = Color3.fromRGB(30, 30, 35),
 }
 
+-- คลังไอคอนทั้งหมด (Roblox Asset IDs)
+UIModule.Icons = {
+	-- เมนูซ้าย (Sidebar)
+	Swords = "rbxassetid://10747377716",   -- Auto Farm
+	Skull = "rbxassetid://10747384022",    -- Auto Raids
+	Users = "rbxassetid://10747383281",    -- Auto Party
+	Cart = "rbxassetid://10747381958",     -- Auto Sell
+	Gift = "rbxassetid://10747378401",     -- Auto Crates
+	Bell = "rbxassetid://10747377045",     -- Webhook
+	Globe = "rbxassetid://10747378330",    -- Utilities
+	Servers = "rbxassetid://10747381285",  -- Servers
+	Settings = "rbxassetid://10747383136", -- Settings
+
+	-- ไอคอนในเนื้อหา (Section)
+	Star = "rbxassetid://10747383049",     -- Abilities
+	Play = "rbxassetid://10747381395",     -- Launch
+	Loop = "rbxassetid://10747381023",     -- Loop
+	Timer = "rbxassetid://10747382902",    -- Auto Restart
+	Search = "rbxassetid://10747381118",   -- Search
+
+	-- UI ทั่วไป
+	Close = "rbxassetid://10747384394",
+	Dropdown = "rbxassetid://10747384978",
+	Check = "rbxassetid://10747376789",
+}
+local Icons = UIModule.Icons
+
+-- ====================== UTILITIES ======================
 local function Create(class, props)
 	local inst = Instance.new(class)
 	for k, v in pairs(props or {}) do
@@ -41,34 +72,49 @@ local function Create(class, props)
 	return inst
 end
 
-local function Tween(obj, props, time, style, dir)
-	local t = TweenService:Create(obj, TweenInfo.new(time or 0.2, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), props)
+local function Tween(obj, props, time)
+	local t = TweenService:Create(
+		obj, 
+		TweenInfo.new(time or 0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), 
+		props
+	)
 	t:Play()
 	return t
 end
 
--- ====================== WINDOW ======================
-function MacUI.new(config)
-	config = config or {}
-	local self = setmetatable({}, MacUI)
+local function ApplyGradient(parent, color1, color2)
+	return Create("UIGradient", {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, color1),
+			ColorSequenceKeypoint.new(1, color2 or color1)
+		}),
+		Rotation = 45,
+		Parent = parent
+	})
+end
 
-	self.Title = config.Title or "MacUI Window"
-	self.Subtitle = config.Subtitle or ""
-	self.Size = config.Size or UDim2.new(0, 780, 0, 480)
+-- ====================== WINDOW ======================
+function UIModule.new(config)
+	config = config or {}
+	local self = setmetatable({}, UIModule)
+
+	self.Title = config.Title or "ReaperX"
+	self.Subtitle = config.Subtitle or "Made for Gamers"
+	self.Size = config.Size or UDim2.new(0, 800, 0, 500)
 	self.Tabs = {}
 	self.CurrentTab = nil
-	self.Flags = {} -- เก็บค่า toggle/slider ฯลฯ
+	self.Flags = {} 
 
 	-- ScreenGui
 	local gui = Create("ScreenGui", {
-		Name = "MacUI",
+		Name = "DarkUI",
 		ResetOnSpawn = false,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	})
 	self.Gui = gui
 
-	-- Main Frame (เหลี่ยม)
+	-- Main Frame
 	local main = Create("Frame", {
 		Name = "Main",
 		Size = self.Size,
@@ -76,27 +122,23 @@ function MacUI.new(config)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = Theme.Background,
 		BorderSizePixel = 0,
+		ClipsDescendants = true,
 		Parent = gui,
 	})
 	self.Main = main
 
-	-- ขอบบาง ๆ
-	Create("UIStroke", {
-		Color = Theme.Border,
-		Thickness = 1,
-		Parent = main,
-	})
+	Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = main })
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = main })
 
 	-- ========== TITLE BAR ==========
 	local titleBar = Create("Frame", {
 		Name = "TitleBar",
-		Size = UDim2.new(1, 0, 0, 38),
+		Size = UDim2.new(1, 0, 0, 50),
 		BackgroundColor3 = Theme.Sidebar,
 		BorderSizePixel = 0,
 		Parent = main,
 	})
 
-	-- เส้นล่าง title bar
 	Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 1),
 		Position = UDim2.new(0, 0, 1, -1),
@@ -105,95 +147,77 @@ function MacUI.new(config)
 		Parent = titleBar,
 	})
 
-	-- 3 จุด macOS
-	local dots = Create("Frame", {
-		Size = UDim2.new(0, 60, 0, 14),
-		Position = UDim2.new(0, 14, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundTransparency = 1,
-		Parent = titleBar,
-	})
-
-	local colors = {
-		Color3.fromRGB(255, 95, 87),   -- แดง
-		Color3.fromRGB(255, 189, 46),  -- เหลือง
-		Color3.fromRGB(40, 200, 64),   -- เขียว
-	}
-	for i, c in ipairs(colors) do
-		local dot = Create("Frame", {
-			Size = UDim2.new(0, 12, 0, 12),
-			Position = UDim2.new(0, (i-1)*20, 0.5, 0),
-			AnchorPoint = Vector2.new(0, 0.5),
-			BackgroundColor3 = c,
-			BorderSizePixel = 0,
-			Parent = dots,
-		})
-		Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = dot })
-	end
-
-	-- Title
+	-- Title Texts
 	local titleLabel = Create("TextLabel", {
-		Size = UDim2.new(1, -200, 1, 0),
-		Position = UDim2.new(0, 80, 0, 0),
+		Size = UDim2.new(1, -200, 0, 20),
+		Position = UDim2.new(0, 24, 0, 8),
 		BackgroundTransparency = 1,
 		Text = self.Title,
 		TextColor3 = Theme.Text,
-		Font = Enum.Font.GothamMedium,
-		TextSize = 14,
+		Font = Enum.Font.GothamBold,
+		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = titleBar,
 	})
-	self.TitleLabel = titleLabel
-
-	-- Subtitle (เล็กกว่า)
+	
 	if self.Subtitle ~= "" then
 		Create("TextLabel", {
-			Size = UDim2.new(0, 200, 0, 14),
-			Position = UDim2.new(0, 80, 0, 22),
+			Size = UDim2.new(1, -200, 0, 14),
+			Position = UDim2.new(0, 24, 0, 28),
 			BackgroundTransparency = 1,
 			Text = self.Subtitle,
 			TextColor3 = Theme.TextDim,
 			Font = Enum.Font.Gotham,
-			TextSize = 11,
+			TextSize = 12,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = titleBar,
 		})
 	end
 
-	-- ปุ่มขวาบน (ปิด)
-	local closeBtn = Create("TextButton", {
-		Size = UDim2.new(0, 32, 0, 32),
-		Position = UDim2.new(1, -38, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
+	-- Top Right Icons (Search, Settings, Close)
+	local btnList = Create("Frame", {
+		Size = UDim2.new(0, 100, 1, 0),
+		Position = UDim2.new(1, -110, 0, 0),
 		BackgroundTransparency = 1,
-		Text = "✕",
-		TextColor3 = Theme.TextDim,
-		Font = Enum.Font.GothamBold,
-		TextSize = 16,
 		Parent = titleBar,
 	})
-	closeBtn.MouseEnter:Connect(function()
-		Tween(closeBtn, { TextColor3 = Theme.Accent })
-	end)
-	closeBtn.MouseLeave:Connect(function()
-		Tween(closeBtn, { TextColor3 = Theme.TextDim })
-	end)
-	closeBtn.MouseButton1Click:Connect(function()
-		gui:Destroy()
-	end)
+	
+	Create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Right,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 12),
+		Parent = btnList,
+	})
+
+	local function CreateTopBtn(iconId)
+		local btn = Create("ImageButton", {
+			Size = UDim2.new(0, 16, 0, 16),
+			BackgroundTransparency = 1,
+			Image = iconId,
+			ImageColor3 = Theme.TextDim,
+			Parent = btnList,
+		})
+		btn.MouseEnter:Connect(function() Tween(btn, { ImageColor3 = Theme.Accent }) end)
+		btn.MouseLeave:Connect(function() Tween(btn, { ImageColor3 = Theme.TextDim }) end)
+		return btn
+	end
+
+	CreateTopBtn(Icons.Settings)
+	CreateTopBtn(Icons.Search)
+	local closeBtn = CreateTopBtn(Icons.Close)
+	closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
 	-- ========== SIDEBAR ==========
 	local sidebar = Create("Frame", {
 		Name = "Sidebar",
-		Size = UDim2.new(0, 180, 1, -38),
-		Position = UDim2.new(0, 0, 0, 38),
+		Size = UDim2.new(0, 200, 1, -50),
+		Position = UDim2.new(0, 0, 0, 50),
 		BackgroundColor3 = Theme.Sidebar,
 		BorderSizePixel = 0,
 		Parent = main,
 	})
-	self.Sidebar = sidebar
 
-	-- เส้นขวา sidebar
 	Create("Frame", {
 		Size = UDim2.new(0, 1, 1, 0),
 		Position = UDim2.new(1, -1, 0, 0),
@@ -206,31 +230,32 @@ function MacUI.new(config)
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 3,
-		ScrollBarImageColor3 = Theme.Border,
+		ScrollBarThickness = 2,
+		ScrollBarImageColor3 = Theme.Accent,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		Parent = sidebar,
 	})
+	self.SidebarList = sidebarList
+
 	Create("UIListLayout", {
-		Padding = UDim.new(0, 2),
+		Padding = UDim.new(0, 4),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = sidebarList,
 	})
 	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 10),
-		PaddingBottom = UDim.new(0, 10),
-		PaddingLeft = UDim.new(0, 8),
-		PaddingRight = UDim.new(0, 8),
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12),
 		Parent = sidebarList,
 	})
-	self.SidebarList = sidebarList
 
 	-- ========== CONTENT ==========
 	local content = Create("Frame", {
 		Name = "Content",
-		Size = UDim2.new(1, -180, 1, -38),
-		Position = UDim2.new(0, 180, 0, 38),
+		Size = UDim2.new(1, -200, 1, -50),
+		Position = UDim2.new(0, 200, 0, 50),
 		BackgroundColor3 = Theme.Content,
 		BorderSizePixel = 0,
 		Parent = main,
@@ -241,27 +266,28 @@ function MacUI.new(config)
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 4,
+		ScrollBarThickness = 3,
 		ScrollBarImageColor3 = Theme.Border,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		Parent = content,
 	})
+	self.ContentScroll = contentScroll
+
 	Create("UIListLayout", {
-		Padding = UDim.new(0, 12),
+		Padding = UDim.new(0, 14),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = contentScroll,
 	})
 	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 16),
-		PaddingBottom = UDim.new(0, 16),
-		PaddingLeft = UDim.new(0, 18),
-		PaddingRight = UDim.new(0, 18),
+		PaddingTop = UDim.new(0, 18),
+		PaddingBottom = UDim.new(0, 18),
+		PaddingLeft = UDim.new(0, 22),
+		PaddingRight = UDim.new(0, 22),
 		Parent = contentScroll,
 	})
-	self.ContentScroll = contentScroll
 
-	-- Drag Window
+	-- Drag Window Logic
 	local dragging, dragStart, startPos
 	titleBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -285,62 +311,60 @@ function MacUI.new(config)
 	return self
 end
 
--- ====================== TAB ======================
-function MacUI:CreateTab(name, icon)
-	local tab = {
-		Name = name,
-		Icon = icon or "●",
-		Sections = {},
-		Container = nil,
-	}
+-- ====================== TAB & LABEL ======================
+-- สร้างป้ายกำกับในแถบด้านซ้าย (เช่น "General", "Utilities")
+function UIModule:CreateTabLabel(text)
+	Create("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 24),
+		BackgroundTransparency = 1,
+		Text = "  " .. text,
+		TextColor3 = Theme.TextDim,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = self.SidebarList,
+	})
+end
 
-	-- Sidebar Button
+function UIModule:CreateTab(name, iconId)
+	local tab = { Name = name, Sections = {} }
+	iconId = iconId or Icons.Settings
+
 	local btn = Create("TextButton", {
-		Size = UDim2.new(1, 0, 0, 34),
-		BackgroundColor3 = Theme.Sidebar,
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundColor3 = Theme.Accent,
 		BackgroundTransparency = 1,
 		Text = "",
 		AutoButtonColor = false,
 		Parent = self.SidebarList,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = btn })
+	
+	local btnGradient = ApplyGradient(btn, Theme.Accent, Theme.AccentDark)
+	btnGradient.Enabled = false
 
-	local iconLabel = Create("TextLabel", {
-		Size = UDim2.new(0, 28, 1, 0),
-		Position = UDim2.new(0, 6, 0, 0),
+	local iconLabel = Create("ImageLabel", {
+		Size = UDim2.new(0, 18, 0, 18),
+		Position = UDim2.new(0, 12, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
 		BackgroundTransparency = 1,
-		Text = tab.Icon,
-		TextColor3 = Theme.TextDim,
-		Font = Enum.Font.GothamMedium,
-		TextSize = 14,
+		Image = iconId,
+		ImageColor3 = Theme.TextDim,
 		Parent = btn,
 	})
 
 	local nameLabel = Create("TextLabel", {
-		Size = UDim2.new(1, -40, 1, 0),
-		Position = UDim2.new(0, 34, 0, 0),
+		Size = UDim2.new(1, -44, 1, 0),
+		Position = UDim2.new(0, 40, 0, 0),
 		BackgroundTransparency = 1,
 		Text = name,
 		TextColor3 = Theme.TextDim,
-		Font = Enum.Font.Gotham,
+		Font = Enum.Font.GothamMedium,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = btn,
 	})
 
-	-- Highlight bar ซ้าย
-	local highlight = Create("Frame", {
-		Size = UDim2.new(0, 3, 0.6, 0),
-		Position = UDim2.new(0, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = Theme.Accent,
-		BorderSizePixel = 0,
-		Visible = false,
-		Parent = btn,
-	})
-	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = highlight })
-
-	-- Container ของ tab นี้
 	local container = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -349,7 +373,7 @@ function MacUI:CreateTab(name, icon)
 		Parent = self.ContentScroll,
 	})
 	Create("UIListLayout", {
-		Padding = UDim.new(0, 10),
+		Padding = UDim.new(0, 14),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = container,
 	})
@@ -361,53 +385,55 @@ function MacUI:CreateTab(name, icon)
 
 	btn.MouseEnter:Connect(function()
 		if self.CurrentTab ~= tab then
-			Tween(btn, { BackgroundTransparency = 0.7 })
+			Tween(btn, { BackgroundTransparency = 0.9 })
 			Tween(nameLabel, { TextColor3 = Theme.Text })
+			Tween(iconLabel, { ImageColor3 = Theme.Text })
 		end
 	end)
+	
 	btn.MouseLeave:Connect(function()
 		if self.CurrentTab ~= tab then
 			Tween(btn, { BackgroundTransparency = 1 })
 			Tween(nameLabel, { TextColor3 = Theme.TextDim })
+			Tween(iconLabel, { ImageColor3 = Theme.TextDim })
 		end
 	end)
 
 	tab.Button = btn
-	tab.Highlight = highlight
+	tab.Gradient = btnGradient
 	tab.NameLabel = nameLabel
 	tab.IconLabel = iconLabel
-
+	
 	table.insert(self.Tabs, tab)
 
-	-- เลือกแท็บแรกอัตโนมัติ
+	-- เลือกแท็บแรกอัตโนมัติเมื่อสร้าง
 	if #self.Tabs == 1 then
 		self:SelectTab(tab)
 	end
-
+	
 	return tab
 end
 
-function MacUI:SelectTab(tab)
+function UIModule:SelectTab(tab)
 	for _, t in ipairs(self.Tabs) do
 		t.Container.Visible = false
-		t.Highlight.Visible = false
+		t.Gradient.Enabled = false
 		t.Button.BackgroundTransparency = 1
 		t.NameLabel.TextColor3 = Theme.TextDim
-		t.IconLabel.TextColor3 = Theme.TextDim
+		t.IconLabel.ImageColor3 = Theme.TextDim
 	end
-
+	
 	tab.Container.Visible = true
-	tab.Highlight.Visible = true
+	tab.Gradient.Enabled = true
 	tab.Button.BackgroundTransparency = 0.85
-	tab.Button.BackgroundColor3 = Theme.Accent
 	tab.NameLabel.TextColor3 = Theme.Text
-	tab.IconLabel.TextColor3 = Theme.Accent
-
+	tab.IconLabel.ImageColor3 = Theme.Accent
+	
 	self.CurrentTab = tab
 end
 
 -- ====================== SECTION ======================
-function MacUI:CreateSection(tab, title)
+function UIModule:CreateSection(tab, config)
 	local section = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -416,49 +442,81 @@ function MacUI:CreateSection(tab, title)
 		Parent = tab.Container,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = section })
-	Create("UIStroke", {
-		Color = Theme.Border,
-		Thickness = 1,
-		Parent = section,
-	})
+	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = section })
 	Create("UIPadding", {
-		PaddingTop = UDim.new(0, 12),
-		PaddingBottom = UDim.new(0, 12),
-		PaddingLeft = UDim.new(0, 14),
-		PaddingRight = UDim.new(0, 14),
+		PaddingTop = UDim.new(0, 14),
+		PaddingBottom = UDim.new(0, 14),
+		PaddingLeft = UDim.new(0, 16),
+		PaddingRight = UDim.new(0, 16),
 		Parent = section,
 	})
+	
 	Create("UIListLayout", {
-		Padding = UDim.new(0, 8),
+		Padding = UDim.new(0, 10),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = section,
 	})
 
-	if title and title ~= "" then
-		Create("TextLabel", {
-			Size = UDim2.new(1, 0, 0, 20),
+	if config.Title then
+		local header = Create("Frame", {
+			Size = UDim2.new(1, 0, 0, 36),
 			BackgroundTransparency = 1,
-			Text = title,
-			TextColor3 = Theme.Text,
-			Font = Enum.Font.GothamMedium,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = section,
 		})
+		
+		-- ไอคอนหน้า Section
+		if config.Icon then
+			Create("ImageLabel", {
+				Size = UDim2.new(0, 20, 0, 20),
+				Position = UDim2.new(0, 0, 0, 8),
+				BackgroundTransparency = 1,
+				Image = config.Icon,
+				ImageColor3 = Theme.Accent,
+				Parent = header,
+			})
+		end
+		
+		local textOffset = config.Icon and 30 or 0
+		
+		Create("TextLabel", {
+			Size = UDim2.new(1, -textOffset, 0, 18),
+			Position = UDim2.new(0, textOffset, 0, 0),
+			BackgroundTransparency = 1,
+			Text = config.Title,
+			TextColor3 = Theme.Text,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = header,
+		})
+		
+		if config.Subtitle then
+			Create("TextLabel", {
+				Size = UDim2.new(1, -textOffset, 0, 14),
+				Position = UDim2.new(0, textOffset, 0, 20),
+				BackgroundTransparency = 1,
+				Text = config.Subtitle,
+				TextColor3 = Theme.TextDim,
+				Font = Enum.Font.Gotham,
+				TextSize = 11,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = header,
+			})
+		end
 	end
-
+	
 	return section
 end
 
 -- ====================== TOGGLE ======================
-function MacUI:CreateToggle(section, config)
+function UIModule:CreateToggle(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Toggle"
 	local default = config.Default or false
 	self.Flags[flag] = default
 
 	local row = Create("Frame", {
-		Size = UDim2.new(1, 0, 0, 28),
+		Size = UDim2.new(1, 0, 0, 32),
 		BackgroundTransparency = 1,
 		Parent = section,
 	})
@@ -468,16 +526,17 @@ function MacUI:CreateToggle(section, config)
 		BackgroundTransparency = 1,
 		Text = config.Name or "Toggle",
 		TextColor3 = Theme.Text,
-		Font = Enum.Font.Gotham,
+		Font = Enum.Font.GothamMedium,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = row,
 	})
-
+	
+	-- ถ้ารองรับคำอธิบายด้วย (เหมือนในโค้ดเก่า)
 	if config.Description then
 		Create("TextLabel", {
 			Size = UDim2.new(1, -60, 0, 14),
-			Position = UDim2.new(0, 0, 0, 16),
+			Position = UDim2.new(0, 0, 0, 18),
 			BackgroundTransparency = 1,
 			Text = config.Description,
 			TextColor3 = Theme.TextDim,
@@ -486,23 +545,26 @@ function MacUI:CreateToggle(section, config)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = row,
 		})
-		row.Size = UDim2.new(1, 0, 0, 40)
+		row.Size = UDim2.new(1, 0, 0, 42)
 	end
 
-	-- Toggle switch
-	local track = Create("Frame", {
-		Size = UDim2.new(0, 42, 0, 24),
+	local track = Create("TextButton", {
+		Size = UDim2.new(0, 42, 0, 22),
 		Position = UDim2.new(1, -42, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = default and Theme.ToggleOn or Theme.ToggleOff,
-		BorderSizePixel = 0,
+		BackgroundColor3 = default and Theme.Accent or Theme.ToggleOff,
+		Text = "",
+		AutoButtonColor = false,
 		Parent = row,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = track })
+	
+	local trackGradient = ApplyGradient(track, Theme.Accent, Theme.AccentDark)
+	trackGradient.Enabled = default
 
 	local knob = Create("Frame", {
-		Size = UDim2.new(0, 18, 0, 18),
-		Position = default and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0),
+		Size = UDim2.new(0, 16, 0, 16),
+		Position = default and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderSizePixel = 0,
@@ -512,35 +574,32 @@ function MacUI:CreateToggle(section, config)
 
 	local function SetState(state)
 		self.Flags[flag] = state
-		Tween(track, { BackgroundColor3 = state and Theme.ToggleOn or Theme.ToggleOff })
-		Tween(knob, { Position = state and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) })
+		trackGradient.Enabled = state
+		Tween(track, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff })
+		Tween(knob, { Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) })
 		if config.Callback then
 			config.Callback(state)
 		end
 	end
 
-	track.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			SetState(not self.Flags[flag])
-		end
+	track.MouseButton1Click:Connect(function()
+		SetState(not self.Flags[flag])
 	end)
 
-	return {
-		Set = SetState,
-		Get = function() return self.Flags[flag] end,
-	}
+	return { Set = SetState, Get = function() return self.Flags[flag] end }
 end
 
 -- ====================== SLIDER ======================
-function MacUI:CreateSlider(section, config)
+function UIModule:CreateSlider(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Slider"
-	local min, max = config.Min or 0, config.Max or 100
+	local min = config.Min or 0
+	local max = config.Max or 100
 	local default = config.Default or min
 	self.Flags[flag] = default
 
 	local row = Create("Frame", {
-		Size = UDim2.new(1, 0, 0, 48),
+		Size = UDim2.new(1, 0, 0, 45),
 		BackgroundTransparency = 1,
 		Parent = section,
 	})
@@ -550,7 +609,7 @@ function MacUI:CreateSlider(section, config)
 		BackgroundTransparency = 1,
 		Text = config.Name or "Slider",
 		TextColor3 = Theme.Text,
-		Font = Enum.Font.Gotham,
+		Font = Enum.Font.GothamMedium,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = row,
@@ -570,24 +629,27 @@ function MacUI:CreateSlider(section, config)
 
 	local track = Create("Frame", {
 		Size = UDim2.new(1, 0, 0, 6),
-		Position = UDim2.new(0, 0, 0, 28),
+		Position = UDim2.new(0, 0, 1, -10),
 		BackgroundColor3 = Theme.SliderTrack,
 		BorderSizePixel = 0,
 		Parent = row,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = track })
+	
+	local pct = (default - min) / (max - min)
 
 	local fill = Create("Frame", {
-		Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
-		BackgroundColor3 = Theme.SliderFill,
+		Size = UDim2.new(pct, 0, 1, 0),
+		BackgroundColor3 = Theme.Accent,
 		BorderSizePixel = 0,
 		Parent = track,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = fill })
+	ApplyGradient(fill, Theme.Accent, Theme.AccentDark)
 
 	local knob = Create("Frame", {
-		Size = UDim2.new(0, 14, 0, 14),
-		Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0),
+		Size = UDim2.new(0, 12, 0, 12),
+		Position = UDim2.new(pct, 0, 0.5, 0),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderSizePixel = 0,
@@ -602,10 +664,13 @@ function MacUI:CreateSlider(section, config)
 			val = math.floor(val / config.Increment + 0.5) * config.Increment
 		end
 		self.Flags[flag] = val
-		local pct = (val - min) / (max - min)
-		fill.Size = UDim2.new(pct, 0, 1, 0)
-		knob.Position = UDim2.new(pct, 0, 0.5, 0)
+		
+		local percent = (val - min) / (max - min)
+		Tween(fill, { Size = UDim2.new(percent, 0, 1, 0) }, 0.1)
+		Tween(knob, { Position = UDim2.new(percent, 0, 0.5, 0) }, 0.1)
+		
 		valueLabel.Text = tostring(val) .. (config.Suffix or "")
+		
 		if config.Callback then
 			config.Callback(val)
 		end
@@ -616,11 +681,13 @@ function MacUI:CreateSlider(section, config)
 			dragging = true
 		end
 	end)
+	
 	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 		end
 	end)
+	
 	UserInputService.InputChanged:Connect(function(input)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local rel = (input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X
@@ -628,22 +695,19 @@ function MacUI:CreateSlider(section, config)
 		end
 	end)
 
-	return {
-		Set = Update,
-		Get = function() return self.Flags[flag] end,
-	}
+	return { Set = Update, Get = function() return self.Flags[flag] end }
 end
 
 -- ====================== DROPDOWN ======================
-function MacUI:CreateDropdown(section, config)
+function UIModule:CreateDropdown(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Dropdown"
-	local options = config.Options or { "Option 1", "Option 2" }
+	local options = config.Options or { "Option 1" }
 	local default = config.Default or options[1]
 	self.Flags[flag] = default
 
 	local row = Create("Frame", {
-		Size = UDim2.new(1, 0, 0, 32),
+		Size = UDim2.new(1, 0, 0, 36),
 		BackgroundTransparency = 1,
 		Parent = section,
 	})
@@ -653,34 +717,50 @@ function MacUI:CreateDropdown(section, config)
 		BackgroundTransparency = 1,
 		Text = config.Name or "Dropdown",
 		TextColor3 = Theme.Text,
-		Font = Enum.Font.Gotham,
+		Font = Enum.Font.GothamMedium,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = row,
 	})
 
 	local box = Create("TextButton", {
-		Size = UDim2.new(0.55, 0, 0, 28),
-		Position = UDim2.new(0.45, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
+		Size = UDim2.new(0.55, 0, 0, 30),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundColor3 = Theme.Dropdown,
-		Text = default .. "  ▼",
+		Text = "   " .. default,
 		TextColor3 = Theme.Text,
 		Font = Enum.Font.Gotham,
 		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		AutoButtonColor = false,
 		Parent = row,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = box })
 	Create("UIStroke", { Color = Theme.Border, Thickness = 1, Parent = box })
+	
+	local icon = Create("ImageLabel", {
+		Size = UDim2.new(0, 16, 0, 16),
+		Position = UDim2.new(1, -24, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundTransparency = 1,
+		Image = Icons.Dropdown,
+		ImageColor3 = Theme.TextDim,
+		Parent = box,
+	})
 
-	-- (Dropdown list แบบง่าย — กดแล้วสลับค่าไปเรื่อย ๆ)
 	local idx = table.find(options, default) or 1
 	box.MouseButton1Click:Connect(function()
 		idx = idx % #options + 1
 		local val = options[idx]
 		self.Flags[flag] = val
-		box.Text = val .. "  ▼"
+		box.Text = "   " .. val
+		
+		-- อนิเมชั่นลูกศรตอนกด
+		Tween(icon, { Position = UDim2.new(1, -24, 0.7, 0) }, 0.1).Completed:Connect(function()
+			Tween(icon, { Position = UDim2.new(1, -24, 0.5, 0) }, 0.1)
+		end)
+		
 		if config.Callback then
 			config.Callback(val)
 		end
@@ -689,14 +769,14 @@ function MacUI:CreateDropdown(section, config)
 	return {
 		Set = function(v)
 			self.Flags[flag] = v
-			box.Text = v .. "  ▼"
+			box.Text = "   " .. v
 		end,
-		Get = function() return self.Flags[flag] end,
+		Get = function() return self.Flags[flag] end
 	}
 end
 
 -- ====================== CHECKBOX ======================
-function MacUI:CreateCheckbox(section, config)
+function UIModule:CreateCheckbox(section, config)
 	config = config or {}
 	local flag = config.Flag or config.Name or "Checkbox"
 	local default = config.Default or false
@@ -709,7 +789,7 @@ function MacUI:CreateCheckbox(section, config)
 	})
 
 	local box = Create("Frame", {
-		Size = UDim2.new(0, 18, 0, 18),
+		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(0, 0, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
 		BackgroundColor3 = default and Theme.Accent or Theme.ToggleOff,
@@ -717,24 +797,28 @@ function MacUI:CreateCheckbox(section, config)
 		Parent = row,
 	})
 	Create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = box })
+	local boxGradient = ApplyGradient(box, Theme.Accent, Theme.AccentDark)
+	boxGradient.Enabled = default
 
-	local check = Create("TextLabel", {
-		Size = UDim2.new(1, 0, 1, 0),
+	-- เปลี่ยนจาก TextLabel "✓" เป็นไอคอน ImageLabel
+	local checkIcon = Create("ImageLabel", {
+		Size = UDim2.new(0, 14, 0, 14),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundTransparency = 1,
-		Text = default and "✓" or "",
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		TextSize = 13,
+		Image = Icons.Check,
+		ImageColor3 = Color3.new(1, 1, 1),
+		ImageTransparency = default and 0 or 1,
 		Parent = box,
 	})
 
 	Create("TextLabel", {
-		Size = UDim2.new(1, -28, 1, 0),
-		Position = UDim2.new(0, 26, 0, 0),
+		Size = UDim2.new(1, -30, 1, 0),
+		Position = UDim2.new(0, 30, 0, 0),
 		BackgroundTransparency = 1,
 		Text = config.Name or "Checkbox",
 		TextColor3 = Theme.Text,
-		Font = Enum.Font.Gotham,
+		Font = Enum.Font.GothamMedium,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = row,
@@ -742,8 +826,10 @@ function MacUI:CreateCheckbox(section, config)
 
 	local function SetState(state)
 		self.Flags[flag] = state
-		box.BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff
-		check.Text = state and "✓" or ""
+		boxGradient.Enabled = state
+		Tween(box, { BackgroundColor3 = state and Theme.Accent or Theme.ToggleOff })
+		Tween(checkIcon, { ImageTransparency = state and 0 or 1 })
+		
 		if config.Callback then
 			config.Callback(state)
 		end
@@ -759,7 +845,7 @@ function MacUI:CreateCheckbox(section, config)
 end
 
 -- ====================== LABEL ======================
-function MacUI:CreateLabel(section, text)
+function UIModule:CreateLabel(section, text)
 	return Create("TextLabel", {
 		Size = UDim2.new(1, 0, 0, 18),
 		BackgroundTransparency = 1,
@@ -773,4 +859,4 @@ function MacUI:CreateLabel(section, text)
 	})
 end
 
-return MacUI
+return UIModule
