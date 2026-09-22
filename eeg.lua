@@ -183,6 +183,8 @@ EggController.Config = {
 	StealEggNewRagdollRecoveryTimeout = 3,
 	StealEggNewPickupDelay = 2,
 	ReturnFloatHeight = 5,
+	OnlyMutatedEggs = false,
+	PrioritizeMutatedEggs = true,
 	AutoTreadmillWhenIdle = true,
 	-- Verify real replicated SpeedPower rather than the treadmill HUD/belt event.
 	TreadmillSpeedCheckSeconds = 5,
@@ -723,17 +725,122 @@ function EggController.IsEligibleEgg(egg)
 	if not EggController.ALLOWED_RARITIES[rarity] or EggController.Config.SelectedRarities[rarity] ~= true then return false, nil, nil end
 	return true, record, rarity
 end
-function EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid)
+function EggController.HasMutation(record, egg)
+	if typeof(record) == "table" then
+		if typeof(record.Mutations) == "table" then
+			if #record.Mutations > 0 then
+				return true, record.Mutations
+			end
+			for mutKey, mutVal in pairs(record.Mutations) do
+				if mutVal ~= false and mutVal ~= nil then
+					return true, { tostring(mutKey) }
+				end
+			end
+		elseif typeof(record.Mutations) == "string" and record.Mutations ~= "" and record.Mutations ~= "None" then
+			return true, { record.Mutations }
+		end
+
+		if typeof(record.BaseMutation) == "string" and record.BaseMutation ~= "" and record.BaseMutation ~= "None" then
+			return true, { record.BaseMutation }
+		end
+
+		if typeof(record.Mutation) == "string" and record.Mutation ~= "" and record.Mutation ~= "None" then
+			return true, { record.Mutation }
+		elseif typeof(record.Mutation) == "table" and next(record.Mutation) ~= nil then
+			return true, record.Mutation
+		elseif record.Mutation == true then
+			return true, { "Mutation" }
+		end
+
+		if typeof(record.SpawnMutation) == "string" and record.SpawnMutation ~= "" and record.SpawnMutation ~= "None" then
+			return true, { record.SpawnMutation }
+		end
+
+		if typeof(record.ItemData) == "table" then
+			local itemMut = record.ItemData.Mutations or record.ItemData.Mutation or record.ItemData.BaseMutation
+			if typeof(itemMut) == "table" then
+				if #itemMut > 0 then return true, itemMut end
+				for k, v in pairs(itemMut) do
+					if v ~= false and v ~= nil then return true, { tostring(k) } end
+				end
+			elseif typeof(itemMut) == "string" and itemMut ~= "" and itemMut ~= "None" then
+				return true, { itemMut }
+			end
+		end
+
+		if typeof(record.Traits) == "table" and next(record.Traits) ~= nil then
+			return true, record.Traits
+		end
+		if typeof(record.Trait) == "string" and record.Trait ~= "" and record.Trait ~= "None" then
+			return true, { record.Trait }
+		end
+		if typeof(record.Status) == "string" and record.Status ~= "" and record.Status ~= "None" then
+			return true, { record.Status }
+		elseif typeof(record.Status) == "table" and next(record.Status) ~= nil then
+			return true, record.Status
+		end
+		if typeof(record.Aura) == "string" and record.Aura ~= "" and record.Aura ~= "None" then
+			return true, { record.Aura }
+		end
+	end
+
+	if egg and egg:IsA("Instance") then
+		local attrNames = {
+			"Mutation", "Mutations", "SpawnMutation", "BaseMutation",
+			"Status", "Trait", "Traits", "Aura", "Effect", "Modifier", "Tier"
+		}
+		for _, attr in ipairs(attrNames) do
+			local val = egg:GetAttribute(attr)
+			if val ~= nil and val ~= false and val ~= "" and val ~= "None" and val ~= 0 then
+				return true, { tostring(val) }
+			end
+		end
+
+		local prompt = egg:FindFirstChild("CarryAreaEgg", true)
+		if prompt and prompt:IsA("ProximityPrompt") then
+			local objText = prompt.ObjectText
+			if typeof(objText) == "string" and objText ~= "" then
+				local lowerText = string.lower(objText)
+				if string.find(lowerText, "shiny", 1, true)
+					or string.find(lowerText, "gold", 1, true)
+					or string.find(lowerText, "rainbow", 1, true)
+					or string.find(lowerText, "blood", 1, true)
+					or string.find(lowerText, "ghost", 1, true)
+					or string.find(lowerText, "mutat", 1, true)
+					or string.find(lowerText, "boss", 1, true)
+					or string.find(lowerText, "aura", 1, true) then
+					return true, { objText }
+				end
+			end
+		end
+
+		if egg:FindFirstChild("Mutation")
+			or egg:FindFirstChild("Mutations")
+			or egg:FindFirstChild("Status")
+			or egg:FindFirstChild("Aura")
+			or egg:FindFirstChild("Particles")
+			or egg:FindFirstChild("Highlight") then
+			return true, { "InstanceChild" }
+		end
+	end
+
+	return false, nil
+end
+
+function EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid, requireMutation)
 	local bestEgg, bestRecord, bestDistance, bestRate = nil, nil, math.huge, -math.huge
 	for _, egg in ipairs(EggController.GetEggs()) do
 		local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 		local position = eligible and EggController.GetEggPosition(egg)
 		if position and rarity == wantedRarity and (excludedUid == nil or record.Uid ~= excludedUid) then
-			local earningRate = getEggEarningRate(record)
-			local delta = rootPosition - position
-			local distance = delta:Dot(delta)
-			if earningRate > bestRate or (earningRate == bestRate and distance < bestDistance) then
-				bestEgg, bestRecord, bestDistance, bestRate = egg, record, distance, earningRate
+			local isMutated = EggController.HasMutation(record, egg)
+			if requireMutation == nil or (requireMutation == true and isMutated) or (requireMutation == false and not isMutated) then
+				local earningRate = getEggEarningRate(record)
+				local delta = rootPosition - position
+				local distance = delta:Dot(delta)
+				if earningRate > bestRate or (earningRate == bestRate and distance < bestDistance) then
+					bestEgg, bestRecord, bestDistance, bestRate = egg, record, distance, earningRate
+				end
 			end
 		end
 	end
@@ -746,6 +853,7 @@ function EggController.FindBestEggForRarity(wantedRarity, rootPosition, excluded
 		AssetCategory = bestRecord.AssetCategory,
 		AreaId = bestRecord.AreaId,
 		EarningRate = bestRate,
+		IsMutated = EggController.HasMutation(bestRecord, bestEgg),
 	}
 end
 
@@ -753,9 +861,26 @@ function EggController.GetBestEligibleEgg(excludedUid)
 	local root = getRoot()
 	if not root then return nil end
 	local rootPosition = root.Position
+
+	-- Phase 1: ค้นหาไข่ที่ติดสถานะ (Mutation) ในทุก Rarity ที่เลือกเป็นอันดับแรก
+	if EggController.Config.PrioritizeMutatedEggs ~= false or EggController.Config.OnlyMutatedEggs == true then
+		for _, wantedRarity in ipairs(EggController.RARITY_PRIORITY) do
+			if EggController.Config.SelectedRarities[wantedRarity] then
+				local candidate = EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid, true)
+				if candidate then return candidate end
+			end
+		end
+	end
+
+	-- หากเปิด OnlyMutatedEggs = true จะไม่ขโมยไข่ธรรมดา
+	if EggController.Config.OnlyMutatedEggs == true then
+		return nil
+	end
+
+	-- Phase 2: ค้นหาไข่ธรรมดาตาม Rarity ปกติ
 	for _, wantedRarity in ipairs(EggController.RARITY_PRIORITY) do
 		if EggController.Config.SelectedRarities[wantedRarity] then
-			local candidate = EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid)
+			local candidate = EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid, false)
 			if candidate then return candidate end
 		end
 	end
@@ -768,14 +893,43 @@ end
 -- without preventing the normal rarity-ranked search when Forest is empty.
 function EggController.GetBestEligibleEggInArea(areaId)
 	if typeof(areaId) ~= "string" or areaId == "" or not getRoot() then return nil end
+	local rootPosition = getRoot().Position
+	if EggController.Config.PrioritizeMutatedEggs ~= false or EggController.Config.OnlyMutatedEggs == true then
+		for _, wanted in ipairs(EggController.RARITY_PRIORITY) do
+			if EggController.Config.SelectedRarities[wanted] then
+				local best, bestRecord, bestDistance = nil, nil, math.huge
+				for _, egg in ipairs(EggController.GetEggs()) do
+					local eligible, record, rarity = EggController.IsEligibleEgg(egg)
+					local position = eligible and EggController.GetEggPosition(egg) or nil
+					if position and rarity == wanted and record.AreaId == areaId and EggController.HasMutation(record, egg) then
+						local delta = rootPosition - position
+						local distance = delta:Dot(delta)
+						if distance < bestDistance then best, bestRecord, bestDistance = egg, record, distance end
+					end
+				end
+				if best then
+					return {
+						Egg = best,
+						Uid = bestRecord.Uid,
+						Rarity = wanted,
+						Name = getEggDisplayName(bestRecord),
+						AssetCategory = bestRecord.AssetCategory,
+						AreaId = bestRecord.AreaId,
+						IsMutated = true,
+					}
+				end
+			end
+		end
+	end
+	if EggController.Config.OnlyMutatedEggs == true then return nil end
 	for _, wanted in ipairs(EggController.RARITY_PRIORITY) do
 		if EggController.Config.SelectedRarities[wanted] then
 			local best, bestRecord, bestDistance = nil, nil, math.huge
 			for _, egg in ipairs(EggController.GetEggs()) do
 				local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 				local position = eligible and EggController.GetEggPosition(egg) or nil
-				if position and rarity == wanted and record.AreaId == areaId then
-					local delta = getRoot().Position - position
+				if position and rarity == wanted and record.AreaId == areaId and not EggController.HasMutation(record, egg) then
+					local delta = rootPosition - position
 					local distance = delta:Dot(delta)
 					if distance < bestDistance then best, bestRecord, bestDistance = egg, record, distance end
 				end
@@ -788,6 +942,7 @@ function EggController.GetBestEligibleEggInArea(areaId)
 					Name = getEggDisplayName(bestRecord),
 					AssetCategory = bestRecord.AssetCategory,
 					AreaId = bestRecord.AreaId,
+					IsMutated = false,
 				}
 			end
 		end
@@ -798,19 +953,25 @@ end
 -- StealEgg New is deliberately distance-first: once the configured rarities
 -- are filtered, choose the physically nearest egg instead of preferring a
 -- distant Secret/Divine egg. Supplying an AreaId lets Forest be tried first.
-function EggController.GetNearestEligibleEgg(areaId, excludedUid)
+function EggController.GetNearestEligibleEgg(areaId, excludedUid, requireMutation)
 	local root = getRoot()
 	if not root then return nil end
 	if areaId ~= nil and (typeof(areaId) ~= "string" or areaId == "") then return nil end
+	if requireMutation == nil and EggController.Config.OnlyMutatedEggs == true then
+		requireMutation = true
+	end
 	local best, bestRecord, bestRarity, bestDistance = nil, nil, nil, math.huge
 	for _, egg in ipairs(EggController.GetEggs()) do
 		local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 		local position = eligible and EggController.GetEggPosition(egg) or nil
 		if position and record.Uid ~= excludedUid and (areaId == nil or record.AreaId == areaId) then
-			local delta = root.Position - position
-			local distance = delta:Dot(delta)
-			if distance < bestDistance then
-				best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
+			local isMutated = EggController.HasMutation(record, egg)
+			if requireMutation == nil or (requireMutation == true and isMutated) or (requireMutation == false and not isMutated) then
+				local delta = root.Position - position
+				local distance = delta:Dot(delta)
+				if distance < bestDistance then
+					best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
+				end
 			end
 		end
 	end
@@ -822,6 +983,7 @@ function EggController.GetNearestEligibleEgg(areaId, excludedUid)
 		Name = getEggDisplayName(bestRecord),
 		AssetCategory = bestRecord.AssetCategory,
 		AreaId = bestRecord.AreaId,
+		IsMutated = EggController.HasMutation(bestRecord, best),
 	}
 end
 
@@ -940,10 +1102,13 @@ function EggController.GetNearestEligibleEggByName(name, excludedUid)
 		local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 		local position = eligible and EggController.GetEggPosition(egg) or nil
 		if position and record.Uid ~= excludedUid and string.lower(getEggDisplayName(record)) == wantedName then
-			local delta = root.Position - position
-			local distance = delta:Dot(delta)
-			if distance < bestDistance then
-				best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
+			local isMutated = EggController.HasMutation(record, egg)
+			if EggController.Config.OnlyMutatedEggs ~= true or isMutated then
+				local delta = root.Position - position
+				local distance = delta:Dot(delta)
+				if distance < bestDistance then
+					best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
+				end
 			end
 		end
 	end
@@ -955,6 +1120,7 @@ function EggController.GetNearestEligibleEggByName(name, excludedUid)
 		Name = getEggDisplayName(bestRecord),
 		AssetCategory = bestRecord.AssetCategory,
 		AreaId = bestRecord.AreaId,
+		IsMutated = EggController.HasMutation(bestRecord, best),
 	}
 end
 
@@ -1001,7 +1167,10 @@ local function getStealEggNewConfiguredTarget(excludedUid)
 	end
 	local candidate = EggController.GetBestEligibleEgg(excludedUid)
 	if candidate then return candidate end
-	return EggController.GetNearestEligibleEgg(nil, excludedUid)
+	if EggController.Config.OnlyMutatedEggs == true then
+		return nil
+	end
+	return EggController.GetNearestEligibleEgg(nil, excludedUid, false)
 end
 
 local function laneZ()
