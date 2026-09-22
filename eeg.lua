@@ -313,6 +313,7 @@ local controllerRunning = false
 local heldCarryState = nil
 local pendingEggUid = nil
 EggController.StagingDiscardRequestedUids = EggController.StagingDiscardRequestedUids or {}
+local FailedEggCooldowns = {}
 -- Delivery lock: once a real target is stolen, staging is blocked until that
 -- target reaches a placement.  The category survives the server's UID rebind.
 EggController.PendingTargetCategory = nil
@@ -676,6 +677,8 @@ end
 function EggController.IsValidEgg(egg)
 	local slots = slotsFolder()
 	if not slots or not egg or not egg:IsA("Model") or egg.Parent ~= slots then return false, nil end
+	local cooldownUntil = FailedEggCooldowns[egg.Name]
+	if cooldownUntil and os.clock() < cooldownUntil then return false, nil end
 	if not getHitbox(egg) then return false, nil end
 	local record = getFieldRecord(egg.Name)
 	if not record or record.Uid ~= egg.Name then return false, nil end
@@ -2059,28 +2062,10 @@ isFieldCarrying = function(uid)
 	return false
 end
 
--- A staging egg is only used to trigger the guard/ragdoll sequence.  If the
--- final pickup fails, deliberately respawn instead of taking that low-value
--- egg home.
+-- Zero-death policy: Suicide reset removed entirely.
+-- Any carried egg (staging or target) safely returns to base without ever resetting or killing the character.
 local function abandonNonTargetStagingCarry(uid)
-	local heldRecord = getFieldRecord(uid)
-	if heldRecord and EggController.PendingTargetCategory == heldRecord.AssetCategory then
-		return false
-	end
-	if not EggController.Config.UseStealEggNew then
-		return false
-	end
-	if EggController.StagingDiscardRequestedUids[uid] == true then return true end
-	EggController.StagingDiscardRequestedUids[uid] = true
-	task.delay(3, function() EggController.StagingDiscardRequestedUids[uid] = nil end)
-	pendingEggUid = nil
-	setState("DiscardingStagingEgg")
-	log("Discarding staging egg; only the selected-tier target may return to base")
-	local humanoid = getHumanoid()
-	if humanoid and humanoid.Health > 0 then
-		pcall(function() humanoid.Health = 0 end)
-	end
-	return true
+	return false
 end
 
 local function firstAreaSlotKey(record)
@@ -2099,7 +2084,11 @@ local function tryCarry(target)
 	local slotKey = firstAreaSlotKey(record)
 	if slotKey == nil then return false end
 	local ok, accepted = pcall(EggState.CarryFieldEgg, record.Uid, slotKey ~= "" and slotKey or nil)
-	return ok and accepted == true
+	if not ok or accepted ~= true then
+		FailedEggCooldowns[record.Uid] = os.clock() + 4
+		return false
+	end
+	return true
 end
 
 -- A carry request can be accepted before CarryChanged replicates. Poll only
@@ -4004,6 +3993,10 @@ function EggController.ExecuteStealCycle(target, stagingTarget)
 		carried, uid = EggController.StealEgg(target)
 	end
 	if not carried then
+		FailedEggCooldowns[target.Uid] = os.clock() + 8
+		if stagingTarget and stagingTarget.Uid then
+			FailedEggCooldowns[stagingTarget.Uid] = os.clock() + 8
+		end
 		if not EggController.Config.UseStealEggNew then
 			watchdogReportFailure("Egg carry was not confirmed")
 		end
