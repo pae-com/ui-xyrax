@@ -156,7 +156,11 @@ EggController.Config = {
 	SelectedRarities = {
 		Secret = true, Eternal = true, Divine = true,
 	},
-	MoveSpeed = 600,
+	AllowedEggStates = {
+		Slot = true,
+		Dropped = true,
+	},
+	MoveSpeed = 625,
 	AutoStealEnabled = true,
 	-- StealEgg New: anti-ragdoll -> doHumanoid -> tween/pick up staging egg ->
 	-- wait for ragdoll -> teleport/pick up target only on ragdoll -> return home.
@@ -183,8 +187,6 @@ EggController.Config = {
 	StealEggNewRagdollRecoveryTimeout = 3,
 	StealEggNewPickupDelay = 2,
 	ReturnFloatHeight = 5,
-	OnlyMutatedEggs = false,
-	PrioritizeMutatedEggs = true,
 	AutoTreadmillWhenIdle = true,
 	-- Verify real replicated SpeedPower rather than the treadmill HUD/belt event.
 	TreadmillSpeedCheckSeconds = 5,
@@ -271,14 +273,7 @@ EggController.Config = {
 	-- delivery lock this long before giving up and resuming staging.
 	PendingTargetPlacementTimeout = 15,
 
-	-- Xyrax Monitor Reporter (read-only telemetry, see the block appended
-	-- near the end of this file, right before `return EggController`).
-	-- Must be registered here with non-nil defaults, or the ExternalConfig
-	-- merge loop just above silently drops these keys (it only accepts a
-	-- key that already exists in this table with a matching type -- see
-	-- "local defaultValue = EggController.Config[key]" below). Disabled
-	-- by default; setting these has no effect on Auto Steal/Rift/Boss/
-	-- Treadmill/Hatch or any other automation behavior.
+	-- Xyrax Monitor Reporter (read-only telemetry)
 	MonitorEnabled = false,
 	MonitorKey = "",
 	MonitorClientId = "",
@@ -508,20 +503,23 @@ local function findRemoteContains(fragment)
 	end
 	return nil
 end
-local BaseUpgradeRemote = remoteAt(Remotes, "Homestead", "AskBaseTierRaise") or findRemoteContains("AskBaseTierRaise")
-local TreadmillUpgradeRemote = remoteAt(Remotes, "Treadmill", "AskTierRaise") or findRemoteContains("AskTierRaise")
-local EquipBestRemote = remoteAt(Remotes, "Haul", "WearBest") or findRemoteContains("WearBest")
-local SellEveryPetRemote = remoteAt(Remotes, "PetSatchel", "SellEveryPet") or findRemoteContains("SellEveryPet")
-local TreadmillEquipRemote = remoteAt(Remotes, "Treadmill", "AskWearStill") or findRemoteContains("AskWearStill")
-local TreadmillUnequipRemote = remoteAt(Remotes, "Treadmill", "AskDoff") or findRemoteContains("AskDoff")
-local TreadmillAssignedBeltRemote = remoteAt(Remotes, "Treadmill", "AssignedBeltShifted") or findRemoteContains("AssignedBeltShifted")
-local TrailPurchaseRemote = remoteAt(Remotes, "Trailwear", "AskPurchase") or findRemoteContains("AskPurchase")
-local TrailChooseRemote = remoteAt(Remotes, "Trailwear", "AskChoose") or findRemoteContains("AskChoose")
-local TrailWornSnapshotRemote = remoteAt(Remotes, "Trailwear", "AskWornSnapshot") or findRemoteContains("AskWornSnapshot")
-local IndexClaimAllRemote = remoteAt(Remotes, "Codex", "AskRedeemAll") or findRemoteContains("AskRedeemAll")
-local GroupRewardRemote = remoteAt(Remotes, "GroupPerk", "RedeemPerk") or findRemoteContains("RedeemPerk")
-local HouseEarningsSummaryRemote = remoteAt(Remotes, "AwayEarnings", "FetchSummary") or findRemoteContains("FetchSummary")
-local HouseEarningsClaimRemote = remoteAt(Remotes, "AwayEarnings", "AskCollect") or findRemoteContains("AskCollect")
+local function resolveRemote(namespace, actionName)
+	return remoteAt(Remotes, namespace, actionName) or findRemoteContains(actionName)
+end
+local BaseUpgradeRemote = resolveRemote("Homestead", "AskBaseTierRaise")
+local TreadmillUpgradeRemote = resolveRemote("Treadmill", "AskTierRaise")
+local EquipBestRemote = resolveRemote("Haul", "WearBest")
+local SellEveryPetRemote = resolveRemote("PetSatchel", "SellEveryPet")
+local TreadmillEquipRemote = resolveRemote("Treadmill", "AskWearStill")
+local TreadmillUnequipRemote = resolveRemote("Treadmill", "AskDoff")
+local TreadmillAssignedBeltRemote = resolveRemote("Treadmill", "AssignedBeltShifted")
+local TrailPurchaseRemote = resolveRemote("Trailwear", "AskPurchase")
+local TrailChooseRemote = resolveRemote("Trailwear", "AskChoose")
+local TrailWornSnapshotRemote = resolveRemote("Trailwear", "AskWornSnapshot")
+local IndexClaimAllRemote = resolveRemote("Codex", "AskRedeemAll")
+local GroupRewardRemote = resolveRemote("GroupPerk", "RedeemPerk")
+local HouseEarningsSummaryRemote = resolveRemote("AwayEarnings", "FetchSummary")
+local HouseEarningsClaimRemote = resolveRemote("AwayEarnings", "AskCollect")
 -- Exact paths/call shapes are from BossShop.lua and PlacedEggRenderer.lua in
 -- the dump.  Do not use a name-search fallback for a currency-spending remote.
 EggController.MutationRuntime.BuyRemote = remoteAt(Remotes, "BossMastery", "AskBuyShopItem")
@@ -680,7 +678,9 @@ function EggController.IsValidEgg(egg)
 	if not slots or not egg or not egg:IsA("Model") or egg.Parent ~= slots then return false, nil end
 	if not getHitbox(egg) then return false, nil end
 	local record = getFieldRecord(egg.Name)
-	if not record or record.Uid ~= egg.Name or not EggController.STEALABLE_STATES[record.State] then return false, nil end
+	if not record or record.Uid ~= egg.Name then return false, nil end
+	local activeStates = EggController.Config.AllowedEggStates or EggController.STEALABLE_STATES
+	if activeStates[record.State] ~= true then return false, nil end
 	local prompt = egg:FindFirstChild("CarryAreaEgg", true)
 	if prompt and (not prompt:IsA("ProximityPrompt") or prompt.Enabled ~= true) then return false, nil end
 	return true, record
@@ -713,6 +713,14 @@ function EggController.SetRarityEnabled(rarity, enabled)
 	EggController.Config.SelectedRarities[rarity] = enabled
 	return true
 end
+function EggController.SetAllowedEggState(stateName, enabled)
+	if typeof(stateName) ~= "string" or typeof(enabled) ~= "boolean" then return false end
+	if not EggController.Config.AllowedEggStates then
+		EggController.Config.AllowedEggStates = table.clone(EggController.STEALABLE_STATES)
+	end
+	EggController.Config.AllowedEggStates[stateName] = enabled
+	return true
+end
 function EggController.SetMoveSpeed(speed)
 	speed = tonumber(speed)
 	if not speed or speed < 50 or speed > 1000 then return false, "Move speed must be between 50 and 1000" end
@@ -725,122 +733,17 @@ function EggController.IsEligibleEgg(egg)
 	if not EggController.ALLOWED_RARITIES[rarity] or EggController.Config.SelectedRarities[rarity] ~= true then return false, nil, nil end
 	return true, record, rarity
 end
-function EggController.HasMutation(record, egg)
-	if typeof(record) == "table" then
-		if typeof(record.Mutations) == "table" then
-			if #record.Mutations > 0 then
-				return true, record.Mutations
-			end
-			for mutKey, mutVal in pairs(record.Mutations) do
-				if mutVal ~= false and mutVal ~= nil then
-					return true, { tostring(mutKey) }
-				end
-			end
-		elseif typeof(record.Mutations) == "string" and record.Mutations ~= "" and record.Mutations ~= "None" then
-			return true, { record.Mutations }
-		end
-
-		if typeof(record.BaseMutation) == "string" and record.BaseMutation ~= "" and record.BaseMutation ~= "None" then
-			return true, { record.BaseMutation }
-		end
-
-		if typeof(record.Mutation) == "string" and record.Mutation ~= "" and record.Mutation ~= "None" then
-			return true, { record.Mutation }
-		elseif typeof(record.Mutation) == "table" and next(record.Mutation) ~= nil then
-			return true, record.Mutation
-		elseif record.Mutation == true then
-			return true, { "Mutation" }
-		end
-
-		if typeof(record.SpawnMutation) == "string" and record.SpawnMutation ~= "" and record.SpawnMutation ~= "None" then
-			return true, { record.SpawnMutation }
-		end
-
-		if typeof(record.ItemData) == "table" then
-			local itemMut = record.ItemData.Mutations or record.ItemData.Mutation or record.ItemData.BaseMutation
-			if typeof(itemMut) == "table" then
-				if #itemMut > 0 then return true, itemMut end
-				for k, v in pairs(itemMut) do
-					if v ~= false and v ~= nil then return true, { tostring(k) } end
-				end
-			elseif typeof(itemMut) == "string" and itemMut ~= "" and itemMut ~= "None" then
-				return true, { itemMut }
-			end
-		end
-
-		if typeof(record.Traits) == "table" and next(record.Traits) ~= nil then
-			return true, record.Traits
-		end
-		if typeof(record.Trait) == "string" and record.Trait ~= "" and record.Trait ~= "None" then
-			return true, { record.Trait }
-		end
-		if typeof(record.Status) == "string" and record.Status ~= "" and record.Status ~= "None" then
-			return true, { record.Status }
-		elseif typeof(record.Status) == "table" and next(record.Status) ~= nil then
-			return true, record.Status
-		end
-		if typeof(record.Aura) == "string" and record.Aura ~= "" and record.Aura ~= "None" then
-			return true, { record.Aura }
-		end
-	end
-
-	if egg and egg:IsA("Instance") then
-		local attrNames = {
-			"Mutation", "Mutations", "SpawnMutation", "BaseMutation",
-			"Status", "Trait", "Traits", "Aura", "Effect", "Modifier", "Tier"
-		}
-		for _, attr in ipairs(attrNames) do
-			local val = egg:GetAttribute(attr)
-			if val ~= nil and val ~= false and val ~= "" and val ~= "None" and val ~= 0 then
-				return true, { tostring(val) }
-			end
-		end
-
-		local prompt = egg:FindFirstChild("CarryAreaEgg", true)
-		if prompt and prompt:IsA("ProximityPrompt") then
-			local objText = prompt.ObjectText
-			if typeof(objText) == "string" and objText ~= "" then
-				local lowerText = string.lower(objText)
-				if string.find(lowerText, "shiny", 1, true)
-					or string.find(lowerText, "gold", 1, true)
-					or string.find(lowerText, "rainbow", 1, true)
-					or string.find(lowerText, "blood", 1, true)
-					or string.find(lowerText, "ghost", 1, true)
-					or string.find(lowerText, "mutat", 1, true)
-					or string.find(lowerText, "boss", 1, true)
-					or string.find(lowerText, "aura", 1, true) then
-					return true, { objText }
-				end
-			end
-		end
-
-		if egg:FindFirstChild("Mutation")
-			or egg:FindFirstChild("Mutations")
-			or egg:FindFirstChild("Status")
-			or egg:FindFirstChild("Aura")
-			or egg:FindFirstChild("Particles")
-			or egg:FindFirstChild("Highlight") then
-			return true, { "InstanceChild" }
-		end
-	end
-
-	return false, nil
-end
-
-function EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid, requireMutation)
+function EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid)
 	local bestEgg, bestRecord, bestDistance, bestRate = nil, nil, math.huge, -math.huge
 	for _, egg in ipairs(EggController.GetEggs()) do
 		local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 		local position = eligible and EggController.GetEggPosition(egg)
 		if position and rarity == wantedRarity and (excludedUid == nil or record.Uid ~= excludedUid) then
-			local isMutated = EggController.HasMutation(record, egg)
-			if requireMutation == nil or (requireMutation == true and isMutated) or (requireMutation == false and not isMutated) then
-				local earningRate = getEggEarningRate(record)
-				local delta = rootPosition - position
-				local distance = delta:Dot(delta)
-				if earningRate > bestRate or (earningRate == bestRate and distance < bestDistance) then
-					bestEgg, bestRecord, bestDistance, bestRate = egg, record, distance, earningRate
-				end
+			local earningRate = getEggEarningRate(record)
+			local delta = rootPosition - position
+			local distance = delta:Dot(delta)
+			if earningRate > bestRate or (earningRate == bestRate and distance < bestDistance) then
+				bestEgg, bestRecord, bestDistance, bestRate = egg, record, distance, earningRate
 			end
 		end
 	end
@@ -853,7 +756,6 @@ function EggController.FindBestEggForRarity(wantedRarity, rootPosition, excluded
 		AssetCategory = bestRecord.AssetCategory,
 		AreaId = bestRecord.AreaId,
 		EarningRate = bestRate,
-		IsMutated = EggController.HasMutation(bestRecord, bestEgg),
 	}
 end
 
@@ -861,26 +763,9 @@ function EggController.GetBestEligibleEgg(excludedUid)
 	local root = getRoot()
 	if not root then return nil end
 	local rootPosition = root.Position
-
-	-- Phase 1: ค้นหาไข่ที่ติดสถานะ (Mutation) ในทุก Rarity ที่เลือกเป็นอันดับแรก
-	if EggController.Config.PrioritizeMutatedEggs ~= false or EggController.Config.OnlyMutatedEggs == true then
-		for _, wantedRarity in ipairs(EggController.RARITY_PRIORITY) do
-			if EggController.Config.SelectedRarities[wantedRarity] then
-				local candidate = EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid, true)
-				if candidate then return candidate end
-			end
-		end
-	end
-
-	-- หากเปิด OnlyMutatedEggs = true จะไม่ขโมยไข่ธรรมดา
-	if EggController.Config.OnlyMutatedEggs == true then
-		return nil
-	end
-
-	-- Phase 2: ค้นหาไข่ธรรมดาตาม Rarity ปกติ
 	for _, wantedRarity in ipairs(EggController.RARITY_PRIORITY) do
 		if EggController.Config.SelectedRarities[wantedRarity] then
-			local candidate = EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid, false)
+			local candidate = EggController.FindBestEggForRarity(wantedRarity, rootPosition, excludedUid)
 			if candidate then return candidate end
 		end
 	end
@@ -893,43 +778,14 @@ end
 -- without preventing the normal rarity-ranked search when Forest is empty.
 function EggController.GetBestEligibleEggInArea(areaId)
 	if typeof(areaId) ~= "string" or areaId == "" or not getRoot() then return nil end
-	local rootPosition = getRoot().Position
-	if EggController.Config.PrioritizeMutatedEggs ~= false or EggController.Config.OnlyMutatedEggs == true then
-		for _, wanted in ipairs(EggController.RARITY_PRIORITY) do
-			if EggController.Config.SelectedRarities[wanted] then
-				local best, bestRecord, bestDistance = nil, nil, math.huge
-				for _, egg in ipairs(EggController.GetEggs()) do
-					local eligible, record, rarity = EggController.IsEligibleEgg(egg)
-					local position = eligible and EggController.GetEggPosition(egg) or nil
-					if position and rarity == wanted and record.AreaId == areaId and EggController.HasMutation(record, egg) then
-						local delta = rootPosition - position
-						local distance = delta:Dot(delta)
-						if distance < bestDistance then best, bestRecord, bestDistance = egg, record, distance end
-					end
-				end
-				if best then
-					return {
-						Egg = best,
-						Uid = bestRecord.Uid,
-						Rarity = wanted,
-						Name = getEggDisplayName(bestRecord),
-						AssetCategory = bestRecord.AssetCategory,
-						AreaId = bestRecord.AreaId,
-						IsMutated = true,
-					}
-				end
-			end
-		end
-	end
-	if EggController.Config.OnlyMutatedEggs == true then return nil end
 	for _, wanted in ipairs(EggController.RARITY_PRIORITY) do
 		if EggController.Config.SelectedRarities[wanted] then
 			local best, bestRecord, bestDistance = nil, nil, math.huge
 			for _, egg in ipairs(EggController.GetEggs()) do
 				local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 				local position = eligible and EggController.GetEggPosition(egg) or nil
-				if position and rarity == wanted and record.AreaId == areaId and not EggController.HasMutation(record, egg) then
-					local delta = rootPosition - position
+				if position and rarity == wanted and record.AreaId == areaId then
+					local delta = getRoot().Position - position
 					local distance = delta:Dot(delta)
 					if distance < bestDistance then best, bestRecord, bestDistance = egg, record, distance end
 				end
@@ -942,7 +798,6 @@ function EggController.GetBestEligibleEggInArea(areaId)
 					Name = getEggDisplayName(bestRecord),
 					AssetCategory = bestRecord.AssetCategory,
 					AreaId = bestRecord.AreaId,
-					IsMutated = false,
 				}
 			end
 		end
@@ -953,25 +808,19 @@ end
 -- StealEgg New is deliberately distance-first: once the configured rarities
 -- are filtered, choose the physically nearest egg instead of preferring a
 -- distant Secret/Divine egg. Supplying an AreaId lets Forest be tried first.
-function EggController.GetNearestEligibleEgg(areaId, excludedUid, requireMutation)
+function EggController.GetNearestEligibleEgg(areaId, excludedUid)
 	local root = getRoot()
 	if not root then return nil end
 	if areaId ~= nil and (typeof(areaId) ~= "string" or areaId == "") then return nil end
-	if requireMutation == nil and EggController.Config.OnlyMutatedEggs == true then
-		requireMutation = true
-	end
 	local best, bestRecord, bestRarity, bestDistance = nil, nil, nil, math.huge
 	for _, egg in ipairs(EggController.GetEggs()) do
 		local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 		local position = eligible and EggController.GetEggPosition(egg) or nil
 		if position and record.Uid ~= excludedUid and (areaId == nil or record.AreaId == areaId) then
-			local isMutated = EggController.HasMutation(record, egg)
-			if requireMutation == nil or (requireMutation == true and isMutated) or (requireMutation == false and not isMutated) then
-				local delta = root.Position - position
-				local distance = delta:Dot(delta)
-				if distance < bestDistance then
-					best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
-				end
+			local delta = root.Position - position
+			local distance = delta:Dot(delta)
+			if distance < bestDistance then
+				best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
 			end
 		end
 	end
@@ -983,7 +832,6 @@ function EggController.GetNearestEligibleEgg(areaId, excludedUid, requireMutatio
 		Name = getEggDisplayName(bestRecord),
 		AssetCategory = bestRecord.AssetCategory,
 		AreaId = bestRecord.AreaId,
-		IsMutated = EggController.HasMutation(bestRecord, best),
 	}
 end
 
@@ -1102,13 +950,10 @@ function EggController.GetNearestEligibleEggByName(name, excludedUid)
 		local eligible, record, rarity = EggController.IsEligibleEgg(egg)
 		local position = eligible and EggController.GetEggPosition(egg) or nil
 		if position and record.Uid ~= excludedUid and string.lower(getEggDisplayName(record)) == wantedName then
-			local isMutated = EggController.HasMutation(record, egg)
-			if EggController.Config.OnlyMutatedEggs ~= true or isMutated then
-				local delta = root.Position - position
-				local distance = delta:Dot(delta)
-				if distance < bestDistance then
-					best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
-				end
+			local delta = root.Position - position
+			local distance = delta:Dot(delta)
+			if distance < bestDistance then
+				best, bestRecord, bestRarity, bestDistance = egg, record, rarity, distance
 			end
 		end
 	end
@@ -1120,7 +965,6 @@ function EggController.GetNearestEligibleEggByName(name, excludedUid)
 		Name = getEggDisplayName(bestRecord),
 		AssetCategory = bestRecord.AssetCategory,
 		AreaId = bestRecord.AreaId,
-		IsMutated = EggController.HasMutation(bestRecord, best),
 	}
 end
 
@@ -1167,10 +1011,7 @@ local function getStealEggNewConfiguredTarget(excludedUid)
 	end
 	local candidate = EggController.GetBestEligibleEgg(excludedUid)
 	if candidate then return candidate end
-	if EggController.Config.OnlyMutatedEggs == true then
-		return nil
-	end
-	return EggController.GetNearestEligibleEgg(nil, excludedUid, false)
+	return EggController.GetNearestEligibleEgg(nil, excludedUid)
 end
 
 local function laneZ()
@@ -1240,19 +1081,6 @@ local function rebindAnimate(character)
 	return true
 end
 
-function EggController.RestoreCamera(targetSubject)
-	local camera = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
-	if not camera then return end
-	local character = LocalPlayer.Character
-	local subject = targetSubject or (character and character:FindFirstChildOfClass("Humanoid"))
-	if subject and subject.Parent then
-		pcall(function()
-			camera.CameraType = Enum.CameraType.Custom
-			camera.CameraSubject = subject
-		end)
-	end
-end
-
 -- Ported character preparation from stealegg.lua.  The current humanoid is
 -- immediately reacquired by getHumanoid(), rather than invalidating the flow.
 local function swapStealHumanoid()
@@ -1280,13 +1108,6 @@ local function swapStealHumanoid()
 	local root = getRoot()
 	if root then root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero end
 	pcall(function() replacement:ChangeState(Enum.HumanoidStateType.Running) end)
-	EggController.RestoreCamera(replacement)
-	task.spawn(function()
-		for _ = 1, 10 do
-			EggController.RestoreCamera(replacement)
-			task.wait(.1)
-		end
-	end)
 	return getHumanoid() ~= nil
 end
 
@@ -1438,19 +1259,6 @@ local function applyStealEggNewProtection(character)
 			end
 		end
 	end))
-
-	table.insert(StealEggNewProtection.Connections, RunService.Heartbeat:Connect(function()
-		local camera = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
-		if camera and (camera.CameraSubject == nil or not camera.CameraSubject.Parent) then
-			local currentHumanoid = character and character:FindFirstChildOfClass("Humanoid")
-			if currentHumanoid and currentHumanoid.Parent then
-				pcall(function()
-					camera.CameraType = Enum.CameraType.Custom
-					camera.CameraSubject = currentHumanoid
-				end)
-			end
-		end
-	end))
 end
 
 function StealEggNewProtection:Stop()
@@ -1513,15 +1321,12 @@ local function doHumanoid()
 		task.wait(.05)
 		original:Destroy()
 		task.wait(.05)
-		EggController.RestoreCamera(cloned)
-		task.spawn(function()
-			for _ = 1, 10 do
-				EggController.RestoreCamera(cloned)
-				task.wait(.1)
-			end
-		end)
+		if Workspace.CurrentCamera then Workspace.CurrentCamera.CameraSubject = cloned end
 	end)
 	if ok and cloned and cloned.Parent then
+		if not cloned:FindFirstChildOfClass("Animator") then
+			pcall(function() Instance.new("Animator").Parent = cloned end)
+		end
 		rebindAnimate(character)
 		return true
 	end
@@ -1563,7 +1368,7 @@ function EggController.NormalizeMovementCharacter(humanoid, character)
 	end
 end
 
-local function stealMoveTo(targetX, targetZ, heightOffset)
+local function stealMoveTo(targetX, targetZ, heightOffset, exactY)
 	local yOffset = typeof(heightOffset) == "number" and heightOffset or 0
 	local deadline = tick() + EggController.MOVE_TIMEOUT
 	while tick() < deadline do
@@ -1571,31 +1376,58 @@ local function stealMoveTo(targetX, targetZ, heightOffset)
 		local root = getRoot()
 		if not root then return false end
 		EggController.NormalizeMovementCharacter(getHumanoid(), LocalPlayer.Character)
-		local target = Vector3.new(targetX, groundedY(targetX, targetZ, root.Position.Y) + yOffset, targetZ)
-		local delta = target - root.Position
-		if delta.Magnitude <= EggController.ARRIVE_DISTANCE then anchor(root, CFrame.new(target)); return true end
+		local targetY = typeof(exactY) == "number" and exactY or (groundedY(targetX, targetZ, root.Position.Y) + yOffset)
+		local destination = Vector3.new(targetX, targetY, targetZ)
+		local offset = destination - root.Position
+		local horizontalDist = Vector2.new(offset.X, offset.Z).Magnitude
+		if horizontalDist <= EggController.ARRIVE_DISTANCE or offset.Magnitude <= 2.2 then
+			anchor(root, CFrame.new(destination))
+			return true
+		end
 		local dt = RunService.Heartbeat:Wait()
 		if typeof(dt) ~= "number" or dt <= 0 then dt = 1 / 60 end
 		root = getRoot()
 		if not root then return false end
-		target = Vector3.new(targetX, groundedY(targetX, targetZ, root.Position.Y) + yOffset, targetZ)
-		delta = target - root.Position
-		if delta.Magnitude <= EggController.ARRIVE_DISTANCE then anchor(root, CFrame.new(target)); return true end
-		local nextPosition = root.Position + delta.Unit * math.min(delta.Magnitude, EggController.Config.MoveSpeed * dt)
-		nextPosition = Vector3.new(nextPosition.X, groundedY(nextPosition.X, nextPosition.Z, nextPosition.Y) + yOffset, nextPosition.Z)
-		local horizontal = Vector3.new(delta.X, 0, delta.Z)
-		anchor(root, horizontal.Magnitude > .05 and CFrame.lookAt(nextPosition, nextPosition + horizontal) or CFrame.new(nextPosition))
+		targetY = typeof(exactY) == "number" and exactY or (groundedY(targetX, targetZ, root.Position.Y) + yOffset)
+		destination = Vector3.new(targetX, targetY, targetZ)
+		offset = destination - root.Position
+		horizontalDist = Vector2.new(offset.X, offset.Z).Magnitude
+		if horizontalDist <= EggController.ARRIVE_DISTANCE or offset.Magnitude <= 2.2 then
+			anchor(root, CFrame.new(destination))
+			return true
+		end
+		local speed = tonumber(EggController.Config.MoveSpeed) or 300
+		local stepDist = math.min(offset.Magnitude, speed * dt)
+		local nextPos = root.Position + offset.Unit * stepDist
+		local nextGroundY = typeof(exactY) == "number" and exactY or (groundedY(nextPos.X, nextPos.Z, nextPos.Y) + yOffset)
+		nextPos = Vector3.new(nextPos.X, nextGroundY, nextPos.Z)
+		local horizontal = Vector3.new(offset.X, 0, offset.Z)
+		anchor(root, horizontal.Magnitude > .05 and CFrame.lookAt(nextPos, nextPos + horizontal) or CFrame.new(nextPos))
+	end
+	local root = getRoot()
+	if root then
+		local flatDelta = Vector2.new(targetX - root.Position.X, targetZ - root.Position.Z).Magnitude
+		if flatDelta <= 3.5 then
+			anchor(root, CFrame.new(targetX, typeof(exactY) == "number" and exactY or root.Position.Y, targetZ))
+			return true
+		end
 	end
 	return false
 end
 local function buildStealPath(startPosition, targetPosition)
 	local path = {}
+	local directDelta = targetPosition - startPosition
+	local directDist = Vector2.new(directDelta.X, directDelta.Z).Magnitude
+	if directDist <= 60 then
+		table.insert(path, Vector3.new(targetPosition.X, targetPosition.Y or laneY(), targetPosition.Z))
+		return path
+	end
 	local corridorStart = clampToCorridor(startPosition)
 	local corridorTarget = clampToCorridor(targetPosition)
 	if (startPosition - corridorStart).Magnitude > 3 then table.insert(path, corridorStart) end
 	if math.abs(corridorStart.X - corridorTarget.X) > 2 then table.insert(path, corridorTarget) end
 	-- Leave the corridor only for the final interaction/base position.
-	table.insert(path, Vector3.new(targetPosition.X, laneY(), targetPosition.Z))
+	table.insert(path, Vector3.new(targetPosition.X, targetPosition.Y or laneY(), targetPosition.Z))
 	return path
 end
 
@@ -1684,7 +1516,9 @@ local function avoidTrapsInPath(path)
 end
 
 local function stealAlong(path)
-	for _, waypoint in ipairs(avoidTrapsInPath(path)) do if not stealMoveTo(waypoint.X, waypoint.Z) then return false end end
+	for _, waypoint in ipairs(avoidTrapsInPath(path)) do
+		if not stealMoveTo(waypoint.X, waypoint.Z, 0, waypoint.Y) then return false end
+	end
 	return true
 end
 
@@ -1694,7 +1528,11 @@ local function tweenStealMoveTo(targetX, targetZ, targetY, speedOverride)
 	local resolvedY = typeof(targetY) == "number" and targetY or groundedY(targetX, targetZ, root.Position.Y)
 	local targetPosition = Vector3.new(targetX, resolvedY, targetZ)
 	local delta = targetPosition - root.Position
-	if delta.Magnitude <= EggController.ARRIVE_DISTANCE then anchor(root, CFrame.new(targetPosition)); return true end
+	local horizStartDist = Vector2.new(delta.X, delta.Z).Magnitude
+	if horizStartDist <= EggController.ARRIVE_DISTANCE or delta.Magnitude <= 2.2 then
+		anchor(root, CFrame.new(targetPosition))
+		return true
+	end
 	local horizontal = Vector3.new(delta.X, 0, delta.Z)
 	local targetCFrame = horizontal.Magnitude > .05
 		and CFrame.lookAt(targetPosition, targetPosition + horizontal)
@@ -1715,14 +1553,17 @@ local function tweenStealMoveTo(targetX, targetZ, targetY, speedOverride)
 	end
 	completionConnection:Disconnect()
 	root = getRoot()
-	if not root or (root.Position - targetPosition).Magnitude > 3 then return false end
-	root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
+	if not root then return false end
+	local finalDelta = root.Position - targetPosition
+	local horizDelta = Vector2.new(finalDelta.X, finalDelta.Z).Magnitude
+	if horizDelta > 4.5 and finalDelta.Magnitude > 6 then return false end
+	anchor(root, targetCFrame)
 	return true
 end
 
 local function tweenAlong(path)
 	for _, waypoint in ipairs(avoidTrapsInPath(path)) do
-		if not tweenStealMoveTo(waypoint.X, waypoint.Z) then return false end
+		if not tweenStealMoveTo(waypoint.X, waypoint.Z, waypoint.Y) then return false end
 	end
 	return true
 end
@@ -1934,7 +1775,9 @@ local function stageAtHomeForTreadmill()
 	-- the owner's home first, then use the regular movement routine to the belt.
 	if (root.Position - home).Magnitude > 10 then
 		setState("ReturningHomeForTreadmill")
-		if not stealAlong(buildStealPath(root.Position, home)) then return false end
+		if not stealAlong(buildStealPath(root.Position, home)) then
+			if not rawTeleport(Vector3.new(home.X, home.Y + 2, home.Z)) then return false end
+		end
 		root = getRoot()
 		if root then anchor(root, CFrame.new(home.X, home.Y + 2, home.Z)) end
 		task.wait(.1)
@@ -2147,9 +1990,13 @@ function EggController.RunTreadmillTraining()
 	-- Always finish with normal corridor movement onto the belt, even when the
 	-- root appears nearby.  This clears a floating position left from stealing.
 	root = getRoot()
-	if not root or not stealMoveTo(stand.X, stand.Z) then
-		warnLog("Treadmill: could not reach the treadmill stand position")
-		return false
+	if not root or not stealMoveTo(stand.X, stand.Z, 0, stand.Y) then
+		if root and (root.Position - stand).Magnitude <= 12 then
+			anchor(root, CFrame.new(stand))
+		else
+			warnLog("Treadmill: could not reach the treadmill stand position")
+			return false
+		end
 	end
 	if not resetCharacterForTreadmill() then
 		warnLog("Treadmill: character reset after staging failed")
@@ -2199,7 +2046,17 @@ function EggController.GetHeldEgg()
 end
 function EggController.IsHoldingEgg() return EggController.GetHeldEgg() ~= nil end
 isFieldCarrying = function(uid)
-	return typeof(heldCarryState) == "table" and heldCarryState.IsCarrying == true and (not uid or heldCarryState.Uid == uid)
+	if typeof(heldCarryState) == "table" and heldCarryState.IsCarrying == true and (not uid or heldCarryState.Uid == uid) then
+		return true
+	end
+	local held = EggController.GetHeldEgg()
+	if held and (not uid or held.Uid == uid) then
+		local owned = getOwnedEgg(held.Uid)
+		if not owned or owned.Placement == nil then
+			return true
+		end
+	end
+	return false
 end
 
 -- A staging egg is only used to trigger the guard/ragdoll sequence.  If the
@@ -4002,49 +3859,78 @@ function EggController.ResolvePendingEggState()
 	return true, false
 end
 
+local SCHEDULED_ROUTINES = {
+	{
+		IsEnabled = function() return EggController.Config.AutoEquipBest end,
+		TimerKey = "EquipBest",
+		IntervalKey = "EquipBestInterval",
+		Execute = function()
+			if EggController.RunAutoEquipBest() then
+				EggController.Timers.SellPet = os.clock() + 1
+				return true
+			end
+			return false
+		end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoSellUnequippedPets end,
+		TimerKey = "SellPet",
+		IntervalKey = "SellPetInterval",
+		Execute = function() return EggController.RunAutoSellUnequippedPets() end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoClaimHouseEarnings end,
+		TimerKey = "HouseEarnings",
+		IntervalKey = "ClaimHouseEarningsInterval",
+		Execute = function() return EggController.RunAutoClaimHouseEarnings() end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoClaimIndex end,
+		TimerKey = "IndexClaim",
+		IntervalKey = "IndexClaimInterval",
+		Execute = function() return EggController.RunAutoClaimIndex() end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoClaimGroupReward end,
+		TimerKey = "GroupReward",
+		IntervalKey = "GroupRewardClaimInterval",
+		Execute = function() return EggController.RunAutoClaimGroupReward() end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoEquipBestTrail end,
+		TimerKey = "TrailEquip",
+		IntervalKey = "TrailEquipInterval",
+		Execute = function() return EggController.RunAutoEquipBestTrail() end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoBuyTrails end,
+		TimerKey = "TrailPurchase",
+		IntervalKey = "TrailPurchaseInterval",
+		Execute = function() return EggController.RunAutoBuyTrails() end,
+	},
+	{
+		IsEnabled = function() return EggController.Config.AutoUpgradeBase or EggController.Config.AutoUpgradeTreadmill end,
+		TimerKey = "Upgrade",
+		IntervalKey = "UpgradeInterval",
+		Execute = function() return EggController.RunAutoUpgrades() end,
+	},
+}
+
 function EggController.RunScheduledAutomations()
 	if EggController.MutationRuntime.Run() then return true end
 	if EggController.BossMasteryClaimRuntime.Run() then return true end
 	if EggController.Config.AutoPlaceSelectedEggs and EggController.RunAutoPlaceSelectedEggs() then
 		return true
 	end
-	if EggController.Config.AutoEquipBest and os.clock() >= EggController.Timers.EquipBest then
-		EggController.Timers.EquipBest = os.clock() + EggController.Config.EquipBestInterval
-		if EggController.RunAutoEquipBest() then
-			EggController.Timers.SellPet = os.clock() + 1
-			return true
+	local clockNow = os.clock()
+	for _, routine in ipairs(SCHEDULED_ROUTINES) do
+		if routine.IsEnabled() and clockNow >= EggController.Timers[routine.TimerKey] then
+			EggController.Timers[routine.TimerKey] = clockNow + EggController.Config[routine.IntervalKey]
+			if routine.Execute() then return true end
 		end
 	end
-	if EggController.Config.AutoSellUnequippedPets and os.clock() >= EggController.Timers.SellPet then
-		EggController.Timers.SellPet = os.clock() + EggController.Config.SellPetInterval
-		if EggController.RunAutoSellUnequippedPets() then return true end
-	end
-	if EggController.Config.AutoClaimHouseEarnings and os.clock() >= EggController.Timers.HouseEarnings then
-		EggController.Timers.HouseEarnings = os.clock() + EggController.Config.ClaimHouseEarningsInterval
-		if EggController.RunAutoClaimHouseEarnings() then return true end
-	end
-	if EggController.Config.AutoClaimIndex and os.clock() >= EggController.Timers.IndexClaim then
-		EggController.Timers.IndexClaim = os.clock() + EggController.Config.IndexClaimInterval
-		if EggController.RunAutoClaimIndex() then return true end
-	end
-	if EggController.Config.AutoClaimGroupReward and os.clock() >= EggController.Timers.GroupReward then
-		EggController.Timers.GroupReward = os.clock() + EggController.Config.GroupRewardClaimInterval
-		if EggController.RunAutoClaimGroupReward() then return true end
-	end
-	if EggController.Config.AutoEquipBestTrail and os.clock() >= EggController.Timers.TrailEquip then
-		EggController.Timers.TrailEquip = os.clock() + EggController.Config.TrailEquipInterval
-		if EggController.RunAutoEquipBestTrail() then return true end
-	end
-	if EggController.Config.AutoBuyTrails and os.clock() >= EggController.Timers.TrailPurchase then
-		EggController.Timers.TrailPurchase = os.clock() + EggController.Config.TrailPurchaseInterval
-		if EggController.RunAutoBuyTrails() then return true end
-	end
-	if (EggController.Config.AutoUpgradeBase or EggController.Config.AutoUpgradeTreadmill) and os.clock() >= EggController.Timers.Upgrade then
-		EggController.Timers.Upgrade = os.clock() + EggController.Config.UpgradeInterval
-		if EggController.RunAutoUpgrades() then return true end
-	end
-	if EggController.Config.AutoHatchReady and os.clock() >= EggController.Timers.Hatch then
-		EggController.Timers.Hatch = os.clock() + EggController.Config.HatchCheckInterval
+	if EggController.Config.AutoHatchReady and clockNow >= EggController.Timers.Hatch then
+		EggController.Timers.Hatch = clockNow + EggController.Config.HatchCheckInterval
 		if #EggController.GetReadyEggs() > 0 then setState("HatchingEgg"); EggController.HatchReadyEggs() end
 	end
 	return false
@@ -4069,6 +3955,7 @@ end
 
 function EggController.HandleIdleTreadmill()
 	local sellingPending = EggController.Config.AutoSellUnequippedPets
+		and os.clock() >= EggController.Timers.SellPet
 		and #EggController.GetUnequippedPetUids() > 0
 	if sellingPending then
 		if treadmillTraining or isTreadmillHudVisible() then
@@ -4096,8 +3983,7 @@ function EggController.HandleIdleTreadmill()
 					warnLog("Treadmill SpeedPower did not increase after " .. tostring(limit) .. " checks")
 				end
 			else
-				clearTreadmillWearForRetry()
-				nextTreadmillCheckAt = os.clock() + .5
+				nextTreadmillCheckAt = os.clock() + checkSeconds
 			end
 		end
 	end
@@ -4243,6 +4129,7 @@ function EggController.GetStatus()
 		State = EggController.State,
 		Enabled = EggController.Config.AutomationEnabled,
 		AutoStealEnabled = EggController.Config.AutoStealEnabled,
+		AllowedEggStates = table.clone(EggController.Config.AllowedEggStates),
 		AutoBuyTrails = EggController.Config.AutoBuyTrails,
 		AutoTrailProgression = EggController.Config.AutoTrailProgression,
 		EquippedTrail = getEquippedTrailName(getSave()),
@@ -4280,9 +4167,8 @@ if EggState.CarryChanged and typeof(EggState.CarryChanged.Connect) == "function"
 		heldCarryState = typeof(state) == "table" and state.IsCarrying == true and state or nil
 	end)
 end
-LocalPlayer.CharacterAdded:Connect(function(character)
+LocalPlayer.CharacterAdded:Connect(function()
 	characterEpoch += 1
-	EggController.RestoreCamera()
 	-- Same handling as stealegg.lua: refresh only after a real CharacterAdded.
 	-- It does not clear a target or claim the old character "respawned".
 	task.delay(.35, function()
@@ -4292,11 +4178,9 @@ LocalPlayer.CharacterAdded:Connect(function(character)
 		else
 			swapStealHumanoid()
 		end
-		EggController.RestoreCamera()
 	end)
 end)
 
-EggController.RestoreCamera()
 EggController.SetFpsBoost(EggController.Config.FpsBoostEnabled)
 if EggController.Config.AutomationEnabled and EggController.Config.AutoStealEnabled then
 	EggController.StartAutoSteal()
@@ -4305,49 +4189,13 @@ end
 -- ============================================================================
 -- Xyrax Monitor Reporter (Steal an Egg) -- READ-ONLY telemetry, wrapped in
 -- its own pcall so it can never affect the EggController returned above.
---
--- Mirrors AnimeDice_Kaitun.lua's own "Part 4/4: Xyrax Monitor Reporter"
--- design exactly: disabled unless MonitorEnabled=true, fails open on every
--- possible outcome (missing/malformed MonitorKey, no HTTP function, request
--- timeout, 401/403/429/5xx -- every one of these only logs and backs off,
--- never touches EggController or raises past this pcall), guarded against a
--- duplicate start on script re-run within the same session, HMAC-SHA256-
--- signed requests (the exact same pure-Luau implementation, verified against
--- RFC 4231/NIST test vectors, copied verbatim), fixed non-configurable
--- endpoint -- the only thing the customer supplies is MonitorKey.
---
--- Reads state via the SAME accessors this file's own automation already
--- uses above -- never a new/invented read path: getSave() (Save.Get(),
--- already used by RiftRuntime.FindSlotUids/IsLiveAndEligible and the
--- treadmill speed check), getPetItemData() (AssetItems.Decode, already used
--- by RiftRuntime), Assets.Directory[category] (already used by
--- resolveRarity/getEggDisplayName/getEggEarningRate), AssetEarnings.
--- CatalogRatePerSecond (already used by getEggEarningRate/
--- getKaitunWeakestPenPet for the exact same "real income for this item"
--- purpose). save.EggInventory is the one field this block reads that this
--- script did not already read elsewhere -- confirmed against the live
--- client dump's Eggs.lua schema (the SavedEgg map), not guessed, but
--- unlike the others it has no prior live usage in this exact file to point
--- to; wrapped in the same fail-open pcall as everything else, so a wrong
--- read here simply means an empty Eggs list is reported, never an error
--- that could affect automation.
---
--- Never fires a remote, never writes any game/save state, and never touches
--- Auto Steal, Rift, Boss, Treadmill, Hatch/Place, movement, teleport,
--- target selection, or watchdog logic anywhere above this line.
 -- ============================================================================
 local __xyraxMonitorOk, __xyraxMonitorErr = pcall(function()
 
 local cfg = EggController.Config
 if cfg.MonitorEnabled ~= true then return end
 
--- Fixed endpoint -- not read from config. The only thing the customer
--- supplies is MonitorKey.
 local ENDPOINT_URL = "https://dashboard.xyraxhub.xyz/api/v1/heartbeat"
-
--- MonitorKey is one opaque string combining the three credentials the
--- backend actually needs (key id, API key, HMAC signing secret), joined by
--- ":". Same format as AnimeDice's MonitorKey.
 local RAW_MONITOR_KEY = type(cfg.MonitorKey) == "string" and cfg.MonitorKey or ""
 
 local function parseMonitorKey(raw)
@@ -4367,9 +4215,6 @@ if type(_G.__XyraxMonitorReporter) == "table" and _G.__XyraxMonitorReporter.runn
 	warn("[XyraxStealEgg] [Monitor] reporter already running in this session -- replacing with new instance")
 end
 _G.__XyraxMonitorReporter = {running = true, session = sessionKey}
--- RAW_MONITOR_KEY is not referenced again below -- only the parsed, still-
--- secret fields inside `creds` are used, and neither this nor those are ever
--- logged.
 
 local CLIENT_ID = type(cfg.MonitorClientId) == "string" and cfg.MonitorClientId or ""
 local INTERVAL = tonumber(cfg.MonitorInterval) or 20
@@ -4382,12 +4227,6 @@ end
 CLIENT_ID = tostring(CLIENT_ID):sub(1, 64):gsub("[^%w_%-%.:]", "")
 if CLIENT_ID == "" then CLIENT_ID = "auto" end
 
---========================================================
--- SHA-256 / HMAC-SHA256 (pure Luau, bit32). Copied verbatim from
--- AnimeDice_Kaitun.lua's own reporter -- verified against RFC 4231/NIST
--- test vectors there; reused unmodified rather than re-derived, so this
--- carries the exact same correctness guarantee.
---========================================================
 local band, bor, bxor = bit32.band, bit32.bor, bit32.bxor
 local bnot, rshift, lshift, rrotate = bit32.bnot, bit32.rshift, bit32.lshift, bit32.rrotate
 
@@ -4467,11 +4306,6 @@ local function hmacSha256Hex(key, msg)
 	return toHex(sha256bin(table.concat(o) .. sha256bin(table.concat(i) .. msg)))
 end
 
---========================================================
--- Transport. Executors expose HTTP under several names; none is universal,
--- so all the common ones are tried and the whole thing self-disables (with
--- one log line) if none exists.
---========================================================
 local env = (getgenv and getgenv()) or _G
 local httpRequest = (syn and syn.request)
 	or (http and http.request)
@@ -4487,10 +4321,6 @@ end
 
 local EggRecords = requireOptional(SharedUtil:FindFirstChild("EggRecords"))
 
--- Reads real, current Pets/Eggs via the same getSave()/getPetItemData()/
--- Assets.Directory/AssetEarnings accessors already used by this script's
--- own automation above -- never a new read path for the pet side. Bounded
--- at 300 of each, matching the backend's own PetIn/EggIn list caps.
 local function buildPetsAndEggs()
 	local pets, eggs = {}, {}
 	local ok = pcall(function()
@@ -4576,9 +4406,6 @@ local function buildPayload()
 		roblox_user_id = (function() local ok, v = pcall(function() return LocalPlayer.UserId end) return ok and v or nil end)(),
 		roblox_username = tostring((function() local ok, v = pcall(function() return LocalPlayer.Name end) return ok and v or "" end)()):sub(1, 64),
 		roblox_display_name = tostring((function() local ok, v = pcall(function() return LocalPlayer.DisplayName end) return ok and v or "" end)()):sub(1, 64),
-		-- Required for Steal an Egg specifically: the backend's game
-		-- registry resolves the dashboard view from place_id, and rejects
-		-- a steal_egg snapshot sent without one.
 		place_id = game.PlaceId,
 		universe_id = game.GameId,
 
@@ -4643,64 +4470,46 @@ local function send(bodyTable)
 	return false, classifyFailure(status, okReq and type(res) == "table")
 end
 
---========================================================
--- Reporter loop. Independent of the automation scheduler. Fail-open on
--- every outcome, exactly like AnimeDice's own reporter: everything from
--- here on only logs and backs off, never touches EggController or raises
--- past the outer pcall.
---========================================================
 task.spawn(function()
 	task.wait(10)
-
 	local lastFailureLogged = nil
 	local backoff = 0
-
-	warn(("[XyraxStealEgg] [Monitor] reporter started (client_id=%s interval=%ds)"):format(CLIENT_ID, INTERVAL))
-
-	while _G.__XyraxMonitorReporter and _G.__XyraxMonitorReporter.session == sessionKey do
+	log(("[XyraxStealEgg] [Monitor] reporter started (client_id=%s interval=%ds)"):format(CLIENT_ID, INTERVAL))
+	while _G.__XyraxMonitorReporter and _G.__XyraxMonitorReporter.session == sessionKey and _G.__XyraxMonitorReporter.running do
 		local ok, err = pcall(function()
 			if backoff > 0 then
 				backoff -= 1
 				return
 			end
-
 			local payload = buildPayload()
 			local sent, reason = send(payload)
-
 			if sent then
 				if lastFailureLogged then
-					warn("[XyraxStealEgg] [Monitor] reporting recovered")
+					log("[XyraxStealEgg] [Monitor] reporting recovered")
 					lastFailureLogged = nil
 				end
 			else
 				if lastFailureLogged ~= reason then
-					warn(("[XyraxStealEgg] [Monitor] report failed (%s) -- automation is unaffected, will keep retrying"):format(tostring(reason)))
+					warnLog(("[XyraxStealEgg] [Monitor] report failed (%s) -- automation is unaffected, will keep retrying"):format(tostring(reason)))
 					lastFailureLogged = reason
 				end
 				backoff = 2
 			end
 		end)
-
 		if not ok and lastFailureLogged ~= "internal" then
-			warn("[XyraxStealEgg] [Monitor] reporter error: " .. tostring(err) .. " -- automation is unaffected")
+			warnLog("[XyraxStealEgg] [Monitor] reporter error: " .. tostring(err))
 			lastFailureLogged = "internal"
 		end
-
 		task.wait(INTERVAL)
 	end
-
-	if _G.__XyraxMonitorReporter and _G.__XyraxMonitorReporter.session == sessionKey then
+	if type(_G.__XyraxMonitorReporter) == "table" and _G.__XyraxMonitorReporter.session == sessionKey then
 		_G.__XyraxMonitorReporter.running = false
 	end
 end)
 
 end) -- outer pcall
-
 if not __xyraxMonitorOk then
-	warn("[XyraxStealEgg] [Monitor] reporter failed to load: " .. tostring(__xyraxMonitorErr) .. " -- automation is unaffected")
-	if type(_G.__XyraxMonitorReporter) == "table" then
-		_G.__XyraxMonitorReporter.running = false
-	end
+	warn("[XyraxStealEgg] [Monitor] reporter failed to load: " .. tostring(__xyraxMonitorErr))
 end
 
 return EggController
