@@ -1124,9 +1124,6 @@ local isMobileDevice = UserInputService.TouchEnabled
 -- Ported character preparation from stealegg.lua.  The current humanoid is
 -- immediately reacquired by getHumanoid(), rather than invalidating the flow.
 local function swapStealHumanoid()
-	if isMobileDevice then
-		return true
-	end
 	local character, humanoid = LocalPlayer.Character, getHumanoid()
 	if not character or not humanoid then return false end
 	if humanoid:GetAttribute("BobloStealHum") == true or humanoid:GetAttribute("XyraxStealEggNewHumanoid") == true then return true end
@@ -1148,6 +1145,7 @@ local function swapStealHumanoid()
 		pcall(function() Instance.new("Animator").Parent = replacement end)
 	end
 	rebindAnimate(character)
+	if Workspace.CurrentCamera then Workspace.CurrentCamera.CameraSubject = replacement end
 	local root = getRoot()
 	if root then root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero end
 	pcall(function() replacement:ChangeState(Enum.HumanoidStateType.Running) end)
@@ -1343,14 +1341,15 @@ end
 
 -- Kept as doHumanoid so the preparation sequence is explicit in the flow.
 local function doHumanoid()
-	if isMobileDevice then
-		log("StealEgg New: mobile detected; skipped Humanoid clone")
-		return true
-	end
 	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 	local original = character and (character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 10))
 	if not original then return false end
-	if original:GetAttribute("XyraxStealEggNewHumanoid") == true then return true end
+	if original:GetAttribute("XyraxStealEggNewHumanoid") == true or original:GetAttribute("BobloStealHum") == true then return true end
+	for _, descendant in ipairs(character:GetDescendants()) do
+		if descendant:IsA("LocalScript") and string.find(descendant.Name, "PushBack") then
+			pcall(function() descendant.Disabled = true; descendant:Destroy() end)
+		end
+	end
 	local cloned = nil
 	local ok = pcall(function()
 		original.Archivable = true
@@ -2427,20 +2426,12 @@ function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 	if root then
 		root.AssemblyLinearVelocity = Vector3.zero
 		root.AssemblyAngularVelocity = Vector3.zero
-		root.Anchored = true
-		if character and character.PrimaryPart then
-			character:PivotTo(CFrame.new(warpDestination))
-		end
-		root.CFrame = CFrame.new(warpDestination)
-		task.wait(0.06)
 		if character and character.PrimaryPart then
 			character:PivotTo(CFrame.new(warpDestination))
 		end
 		root.CFrame = CFrame.new(warpDestination)
 		root.AssemblyLinearVelocity = Vector3.zero
 		root.AssemblyAngularVelocity = Vector3.zero
-		task.wait(0.06)
-		root.Anchored = false
 	end
 
 	setState("RecoveringAtTargetEgg")
