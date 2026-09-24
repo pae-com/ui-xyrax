@@ -214,12 +214,7 @@ EggController.Config = {
 	-- Verify real replicated SpeedPower rather than the treadmill HUD/belt event.
 	TreadmillSpeedCheckSeconds = 5,
 	TreadmillSpeedFailureLimit = 10,
-	TreadmillHopOnSpeedFailure = true,
-	-- A teleport request can be accepted locally but later fail with Roblox 772
-	-- (the destination filled up). Keep selecting another public server until one
-	-- actually accepts the transfer.
-	TreadmillHopRetryDelay = 3,
-	TreadmillHopAttemptWait = 8,
+	TreadmillHopOnSpeedFailure = false,
 	FpsBoostEnabled = true,
 	AutoHatchReady = true,
 	-- Boss-shop mutation is controller-owned, never a second worker.  It runs
@@ -714,10 +709,6 @@ function EggController.IsValidEgg(egg)
 	if not getHitbox(egg) then return false, nil end
 	local record = getFieldRecord(egg.Name)
 	if not record or record.Uid ~= egg.Name then return false, nil end
-	local eggRarity = resolveRarity(record)
-	local isSecretRarity = eggRarity == "Secret"
-	local activeStates = EggController.Config.AllowedEggStates or EggController.STEALABLE_STATES
-	if not isSecretRarity and activeStates[record.State] ~= true then return false, nil end
 	return true, record
 end
 function EggController.GetEggs()
@@ -1887,81 +1878,7 @@ local function resetTreadmillSpeedMonitor()
 end
 
 local function hopServerForTreadmillFailure()
-	if treadmillHopRequested then return true end
-	treadmillHopRequested = true
-	log("Treadmill SpeedPower did not increase after " .. tostring(EggController.Config.TreadmillSpeedFailureLimit or 10) .. " checks; finding a new server")
-
-	-- TeleportToPlaceInstance only confirms that Roblox accepted the *request*.
-	-- It does not mean the player joined; a full server subsequently raises 772.
-	-- Stay in this worker until the process leaves for a successful destination.
-	task.spawn(function()
-		local triedServerIds = {}
-		local retryDelay = math.max(1, tonumber(EggController.Config.TreadmillHopRetryDelay) or 3)
-		local attemptWait = math.max(3, tonumber(EggController.Config.TreadmillHopAttemptWait) or 8)
-		while treadmillHopRequested and EggController.Config.TreadmillHopOnSpeedFailure do
-			setState("HoppingServerForTreadmill")
-			local candidates = {}
-			local cursor = nil
-			-- Search several pages: the first page can be stale or entirely full.
-			for _ = 1, 4 do
-				local endpoint = "https://games.roblox.com/v1/games/" .. tostring(game.PlaceId)
-					.. "/servers/Public?sortOrder=Asc&limit=100"
-				if typeof(cursor) == "string" and cursor ~= "" then
-					endpoint ..= "&cursor=" .. HttpService:UrlEncode(cursor)
-				end
-				local requestOk, body = pcall(function() return game:HttpGet(endpoint) end)
-				local decodedOk, payload = false, nil
-				if requestOk and typeof(body) == "string" then
-					decodedOk, payload = pcall(function() return HttpService:JSONDecode(body) end)
-				end
-				local servers = decodedOk and typeof(payload) == "table" and payload.data
-				if typeof(servers) ~= "table" then break end
-				for _, server in ipairs(servers) do
-					local serverId = typeof(server) == "table" and server.id or nil
-					local playing = tonumber(typeof(server) == "table" and server.playing) or 0
-					local maxPlayers = tonumber(typeof(server) == "table" and server.maxPlayers) or 0
-					if typeof(serverId) == "string" and serverId ~= game.JobId
-						and not triedServerIds[serverId] and playing < maxPlayers then
-						table.insert(candidates, server)
-					end
-				end
-				cursor = payload.nextPageCursor
-				if typeof(cursor) ~= "string" or cursor == "" then break end
-			end
-			table.sort(candidates, function(left, right)
-				return (tonumber(left.playing) or math.huge) < (tonumber(right.playing) or math.huge)
-			end)
-
-			if #candidates == 0 then
-				-- All cached candidates may have become full. Clear the cache and poll
-				-- again instead of ending the hop after a single unsuccessful pass.
-				triedServerIds = {}
-				warnLog("Server hop: no open server yet; retrying in " .. tostring(retryDelay) .. "s")
-				task.wait(retryDelay)
-			else
-				local server = candidates[1]
-				triedServerIds[server.id] = true
-				log("Server hop attempt: " .. tostring(server.playing) .. "/" .. tostring(server.maxPlayers))
-				local dispatched, dispatchError = pcall(function()
-					TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
-				end)
-				if not dispatched then
-					warnLog("Server hop dispatch failed: " .. tostring(dispatchError))
-					task.wait(retryDelay)
-				else
-					-- On success this script ends as the client changes instance. If it
-					-- remains here (including error 772), try a different server next.
-					task.wait(attemptWait)
-					if treadmillHopRequested then
-						warnLog("Server hop did not complete; trying another server")
-						task.wait(retryDelay)
-					end
-				end
-			end
-		end
-		treadmillHopRequested = false
-	end)
-	return true
+	return false
 end
 
 local function clearTreadmillWearForRetry()
@@ -4161,17 +4078,13 @@ function EggController.HandleIdleTreadmill()
 			if treadmillSpeedFailureCount >= limit then
 				clearTreadmillWearForRetry()
 				nextTreadmillCheckAt = os.clock() + 1
-				if EggController.Config.TreadmillHopOnSpeedFailure then
-					hopServerForTreadmillFailure()
-				else
-					warnLog("Treadmill SpeedPower did not increase after " .. tostring(limit) .. " checks")
-				end
+				warnLog("Treadmill SpeedPower did not increase after " .. tostring(limit) .. " checks; retrying")
 			else
 				nextTreadmillCheckAt = os.clock() + checkSeconds
 			end
 		end
 	end
-	if EggController.Config.AutoTreadmillWhenIdle and not treadmillTraining and not treadmillHopRequested
+	if EggController.Config.AutoTreadmillWhenIdle and not treadmillTraining
 		and os.clock() >= nextTreadmillCheckAt then
 		EggController.RunTreadmillTraining()
 	end
