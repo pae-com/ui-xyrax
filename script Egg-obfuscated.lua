@@ -11,6 +11,10 @@ if not LPH_OBFUSCATED then
 	function VM(...) return ... end
 end
 
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,11 +26,20 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 
 local LocalPlayer = Players.LocalPlayer
-local Client = assert(ReplicatedStorage:FindFirstChild("Client"), "[XyraxStealEgg] ReplicatedStorage.Client is unavailable")
-local Shared = assert(ReplicatedStorage:FindFirstChild("Shared"), "[XyraxStealEgg] ReplicatedStorage.Shared is unavailable")
-local Data = assert(ReplicatedStorage:FindFirstChild("Data"), "[XyraxStealEgg] ReplicatedStorage.Data is unavailable")
-local SharedEggs = assert(Shared:FindFirstChild("Eggs"), "[XyraxStealEgg] Shared.Eggs is unavailable")
-local SharedUtil = assert(Shared:FindFirstChild("Util"), "[XyraxStealEgg] Shared.Util is unavailable")
+if not LocalPlayer then
+	Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+	LocalPlayer = Players.LocalPlayer
+end
+while not LocalPlayer do
+	LocalPlayer = Players.LocalPlayer
+	task.wait(0.1)
+end
+
+local Client = ReplicatedStorage:WaitForChild("Client", 30) or assert(ReplicatedStorage:FindFirstChild("Client"), "[XyraxStealEgg] ReplicatedStorage.Client is unavailable")
+local Shared = ReplicatedStorage:WaitForChild("Shared", 30) or assert(ReplicatedStorage:FindFirstChild("Shared"), "[XyraxStealEgg] ReplicatedStorage.Shared is unavailable")
+local Data = ReplicatedStorage:WaitForChild("Data", 30) or assert(ReplicatedStorage:FindFirstChild("Data"), "[XyraxStealEgg] ReplicatedStorage.Data is unavailable")
+local SharedEggs = Shared:WaitForChild("Eggs", 30) or assert(Shared:FindFirstChild("Eggs"), "[XyraxStealEgg] Shared.Eggs is unavailable")
+local SharedUtil = Shared:WaitForChild("Util", 30) or assert(Shared:FindFirstChild("Util"), "[XyraxStealEgg] Shared.Util is unavailable")
 
 local EggState, PlotState, Assets, EggToolDisplay, Save, SlotIdentity
 do
@@ -53,12 +66,12 @@ do
 	end
 
 	-- These paths/state APIs were checked against the dump and stealegg.lua.
-	EggState = requireModuleTable(Client:FindFirstChild("EggState"), "Client.EggState")
-	PlotState = requireModuleTable(Client:FindFirstChild("PlotState"), "Client.PlotState")
-	Assets = requireModuleTable(Data:FindFirstChild("Assets"), "Data.Assets")
-	EggToolDisplay = requireModuleTable(SharedEggs:FindFirstChild("EggToolDisplay"), "Shared.Eggs.EggToolDisplay")
-	Save = requireModuleTable(Shared:FindFirstChild("Save"), "Shared.Save")
-	SlotIdentity = requireModuleTable(SharedUtil:FindFirstChild("AreaEggSlotIdentity"), "Shared.Util.AreaEggSlotIdentity")
+	EggState = requireModuleTable(Client:WaitForChild("EggState", 30) or Client:FindFirstChild("EggState"), "Client.EggState")
+	PlotState = requireModuleTable(Client:WaitForChild("PlotState", 30) or Client:FindFirstChild("PlotState"), "Client.PlotState")
+	Assets = requireModuleTable(Data:WaitForChild("Assets", 30) or Data:FindFirstChild("Assets"), "Data.Assets")
+	EggToolDisplay = requireModuleTable(SharedEggs:WaitForChild("EggToolDisplay", 30) or SharedEggs:FindFirstChild("EggToolDisplay"), "Shared.Eggs.EggToolDisplay")
+	Save = requireModuleTable(Shared:WaitForChild("Save", 30) or Shared:FindFirstChild("Save"), "Shared.Save")
+	SlotIdentity = requireModuleTable(SharedUtil:WaitForChild("AreaEggSlotIdentity", 30) or SharedUtil:FindFirstChild("AreaEggSlotIdentity"), "Shared.Util.AreaEggSlotIdentity")
 
 	local carryChangedOk, carryChanged, carryChangedConnect = pcall(function()
 		local signal = EggState.CarryChanged
@@ -75,83 +88,22 @@ local function requireOptional(instance)
 	local ok, result = pcall(require, instance)
 	return ok and typeof(result) == "table" and result or nil
 end
-local BaseUpgrade = requireOptional(Client:FindFirstChild("BaseUpgrade"))
-local AssetRoster = requireOptional(Client:FindFirstChild("AssetRoster"))
-local AssetEarnings = requireOptional(SharedUtil:FindFirstChild("AssetEarnings"))
-local Treadmills = requireOptional(Data:FindFirstChild("Treadmills"))
-local Trails = requireOptional(Data:FindFirstChild("Trails"))
-local AssetItems = requireOptional(SharedUtil:FindFirstChild("AssetItems"))
-local RiftEligibility = requireOptional(SharedUtil:FindFirstChild("RiftEligibility"))
-local FuseKernel = requireOptional(SharedUtil:FindFirstChild("FuseKernel"))
-local SharedModules = Shared:FindFirstChild("Modules")
-local RiftRecipes = requireOptional(SharedModules and SharedModules:FindFirstChild("RiftRecipes"))
-local Remotes = requireOptional(Shared:FindFirstChild("Remotes")) or {}
+local BaseUpgrade = requireOptional(Client:WaitForChild("BaseUpgrade", 10) or Client:FindFirstChild("BaseUpgrade"))
+local AssetRoster = requireOptional(Client:WaitForChild("AssetRoster", 10) or Client:FindFirstChild("AssetRoster"))
+local AssetEarnings = requireOptional(SharedUtil:WaitForChild("AssetEarnings", 10) or SharedUtil:FindFirstChild("AssetEarnings"))
+local Treadmills = requireOptional(Data:WaitForChild("Treadmills", 10) or Data:FindFirstChild("Treadmills"))
+local Trails = requireOptional(Data:WaitForChild("Trails", 10) or Data:FindFirstChild("Trails"))
+local AssetItems = requireOptional(SharedUtil:WaitForChild("AssetItems", 10) or SharedUtil:FindFirstChild("AssetItems"))
+local RiftEligibility = requireOptional(SharedUtil:WaitForChild("RiftEligibility", 10) or SharedUtil:FindFirstChild("RiftEligibility"))
+local FuseKernel = requireOptional(SharedUtil:WaitForChild("FuseKernel", 10) or SharedUtil:FindFirstChild("FuseKernel"))
+local SharedModules = Shared:WaitForChild("Modules", 10) or Shared:FindFirstChild("Modules")
+local RiftRecipes = requireOptional(SharedModules and (SharedModules:WaitForChild("RiftRecipes", 10) or SharedModules:FindFirstChild("RiftRecipes")))
+local Remotes = requireOptional(Shared:WaitForChild("Remotes", 10) or Shared:FindFirstChild("Remotes")) or {}
 
 -- Public settings can be declared in a loader before this file runs:
 -- getgenv().XyraxConfig = { MoveSpeed = 650, ... }
 -- _G.XyraxConfig is accepted as a fallback for executors without getgenv.
 local Environment = (getgenv and getgenv()) or _G
-
-local isMobileDevice = false
-do
-	local touchOk, touch = pcall(function() return UserInputService.TouchEnabled end)
-	local kbOk, kb = pcall(function() return UserInputService.KeyboardEnabled end)
-	local exName = ""
-	pcall(function()
-		if typeof(identifyexecutor) == "function" then
-			exName = tostring(identifyexecutor())
-		elseif typeof(getexecutorname) == "function" then
-			exName = tostring(getexecutorname())
-		end
-	end)
-	exName = string.lower(exName)
-	local isMobileEx = string.find(exName, "delta", 1, true) ~= nil
-		or string.find(exName, "codex", 1, true) ~= nil
-		or string.find(exName, "arceus", 1, true) ~= nil
-		or string.find(exName, "fluxus", 1, true) ~= nil
-		or string.find(exName, "hydrogen", 1, true) ~= nil
-		or string.find(exName, "vega", 1, true) ~= nil
-		or string.find(exName, "appleware", 1, true) ~= nil
-
-	if (touchOk and touch) and (not kbOk or not kb) then
-		isMobileDevice = true
-	elseif isMobileEx or (touchOk and touch) then
-		isMobileDevice = true
-	end
-end
-
-local function safeHttpGet(endpoint)
-	if typeof(endpoint) ~= "string" or endpoint == "" then return false, nil end
-	local directOk, directBody = pcall(function()
-		if typeof(game.HttpGet) == "function" then
-			return game:HttpGet(endpoint)
-		elseif typeof(HttpGet) == "function" then
-			return HttpGet(endpoint)
-		end
-		return nil
-	end)
-	if directOk and typeof(directBody) == "string" and directBody ~= "" then
-		return true, directBody
-	end
-
-	local httpReq = (syn and syn.request)
-		or (http and http.request)
-		or http_request
-		or request
-		or (fluxus and fluxus.request)
-		or (delta and delta.request)
-		or (Environment and (Environment.request or Environment.http_request or (Environment.delta and Environment.delta.request)))
-	if typeof(httpReq) == "function" then
-		local reqOk, reqRes = pcall(httpReq, {
-			Url = endpoint,
-			Method = "GET"
-		})
-		if reqOk and typeof(reqRes) == "table" and typeof(reqRes.Body) == "string" then
-			return true, reqRes.Body
-		end
-	end
-	return false, nil
-end
 
 -- ============================================================================
 -- Delivery fix: block the client-authoritative guard confiscation.
@@ -162,9 +114,9 @@ end
 -- ============================================================================
 do
 	local function findForestStrike()
-		local packages = ReplicatedStorage:FindFirstChild("Packages")
-		local networking = packages and packages:FindFirstChild("Networking")
-		local direct = networking and networking:FindFirstChild("RE/GuardPatrol/ForestStrike")
+		local packages = ReplicatedStorage:WaitForChild("Packages", 5) or ReplicatedStorage:FindFirstChild("Packages")
+		local networking = packages and (packages:WaitForChild("Networking", 5) or packages:FindFirstChild("Networking"))
+		local direct = networking and (networking:WaitForChild("RE/GuardPatrol/ForestStrike", 5) or networking:FindFirstChild("RE/GuardPatrol/ForestStrike"))
 		if direct and direct:IsA("RemoteEvent") then return direct end
 		for _, inst in ipairs(ReplicatedStorage:GetDescendants()) do
 			if inst:IsA("RemoteEvent") and string.find(inst.Name, "ForestStrike", 1, true) then
@@ -184,8 +136,8 @@ do
 		local FIX = Environment.__XyraxDeliveryFix
 		FIX.target = strike -- refresh target on re-run / rejoin
 		if not FIX.installed then
-			local old
 			pcall(function()
+				local old
 				old = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 					LPH_ATTRIBUTES(VM(NONE))
 					if self == FIX.target and getnamecallmethod() == "FireServer" and not checkC() then
@@ -262,7 +214,7 @@ EggController.Config = {
 	-- Verify real replicated SpeedPower rather than the treadmill HUD/belt event.
 	TreadmillSpeedCheckSeconds = 5,
 	TreadmillSpeedFailureLimit = 10,
-	TreadmillHopOnSpeedFailure = false,
+	TreadmillHopOnSpeedFailure = true,
 	-- A teleport request can be accepted locally but later fail with Roblox 772
 	-- (the destination filled up). Keep selecting another public server until one
 	-- actually accepts the transfer.
@@ -1164,19 +1116,19 @@ local function rebindAnimate(character)
 	return true
 end
 
+local isMobileDevice = UserInputService.TouchEnabled
+	or UserInputService:GetPlatform() == Enum.Platform.Android
+	or UserInputService:GetPlatform() == Enum.Platform.IOS
+	or (typeof(identifyexecutor) == "function" and string.find(string.lower(tostring(identifyexecutor())), "delta") ~= nil)
+
 -- Ported character preparation from stealegg.lua.  The current humanoid is
 -- immediately reacquired by getHumanoid(), rather than invalidating the flow.
 local function swapStealHumanoid()
-	local character, humanoid = LocalPlayer.Character, getHumanoid()
-	if not character or not humanoid then return false end
 	if isMobileDevice then
-		pcall(function()
-			humanoid.Sit = false
-			humanoid.PlatformStand = false
-			humanoid.AutoRotate = true
-		end)
 		return true
 	end
+	local character, humanoid = LocalPlayer.Character, getHumanoid()
+	if not character or not humanoid then return false end
 	if humanoid:GetAttribute("BobloStealHum") == true or humanoid:GetAttribute("XyraxStealEggNewHumanoid") == true then return true end
 	for _, descendant in ipairs(character:GetDescendants()) do
 		if descendant:IsA("LocalScript") and string.find(descendant.Name, "PushBack") then
@@ -1209,9 +1161,6 @@ end
 -- one set of frame connections on re-runs and never clones a Humanoid again
 -- once the current character has already been prepared.
 -- ============================================================================
-if not isMobileDevice and UserInputService.TouchEnabled then
-	isMobileDevice = true
-end
 local oldStealEggNewProtection = Environment.__XyraxStealEggNewProtection
 if typeof(oldStealEggNewProtection) == "table" and typeof(oldStealEggNewProtection.Stop) == "function" then
 	pcall(function() oldStealEggNewProtection:Stop() end)
@@ -1374,9 +1323,9 @@ local function blockStealEggNewRagdollRemotes()
 	local hookState = Environment.__XyraxStealEggNewRagdollRemoteHook or {}
 	Environment.__XyraxStealEggNewRagdollRemoteHook = hookState
 	if hookState.Installed then return end
-	local blockedNames = { ragdoll = true, fling = true, knockback = true, pushback = true, stun = true, physics = true, falling = true, launch = true, throw = true }
-	local old
 	pcall(function()
+		local blockedNames = { ragdoll = true, fling = true, knockback = true, pushback = true, stun = true, physics = true, falling = true, launch = true, throw = true }
+		local old
 		old = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 			LPH_ATTRIBUTES(VM(NONE))
 			local method = getnamecallmethod()
@@ -1665,10 +1614,8 @@ local function tweenAlong(path)
 end
 local function rawTeleport(position)
 	local root = getRoot()
-	if not root then return false end
-	local targetPos = (typeof(position) == "CFrame" and position.Position) or (typeof(position) == "Vector3" and position)
-	if not targetPos then return false end
-	root.CFrame = CFrame.new(targetPos) * (root.CFrame - root.CFrame.Position)
+	if not root or typeof(position) ~= "Vector3" then return false end
+	root.CFrame = CFrame.new(position) * (root.CFrame - root.CFrame.Position)
 	root.AssemblyLinearVelocity, root.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
 	return true
 end
@@ -1941,7 +1888,6 @@ local function resetTreadmillSpeedMonitor()
 end
 
 local function hopServerForTreadmillFailure()
-	if not EggController.Config.TreadmillHopOnSpeedFailure then return false end
 	if treadmillHopRequested then return true end
 	treadmillHopRequested = true
 	log("Treadmill SpeedPower did not increase after " .. tostring(EggController.Config.TreadmillSpeedFailureLimit or 10) .. " checks; finding a new server")
@@ -1964,7 +1910,7 @@ local function hopServerForTreadmillFailure()
 				if typeof(cursor) == "string" and cursor ~= "" then
 					endpoint ..= "&cursor=" .. HttpService:UrlEncode(cursor)
 				end
-				local requestOk, body = safeHttpGet(endpoint)
+				local requestOk, body = pcall(function() return game:HttpGet(endpoint) end)
 				local decodedOk, payload = false, nil
 				if requestOk and typeof(body) == "string" then
 					decodedOk, payload = pcall(function() return HttpService:JSONDecode(body) end)
@@ -2391,58 +2337,52 @@ end
 -- guard ragdoll. Ragdoll causes an immediate target teleport. A timeout ends
 -- the attempt; staging eggs are never treated as successful steals.
 function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
-	if not target or not swapStealHumanoid() then return false, nil end
-	local root = getRoot()
-	if not root then return false, nil end
-
-	-- 1. Determine staging position where the guard / pet patrol is located
-	local stagingPosition = stagingTarget and EggController.GetEggPosition(stagingTarget.Egg)
-	if not stagingPosition then
-		local cframes = EggController.Config.StealEggNewStagingCFrames
-		local firstCf = (typeof(cframes) == "table" and cframes[1]) or EggController.Config.StealEggNewStagingCFrame
-		stagingPosition = (typeof(firstCf) == "CFrame" and firstCf.Position) or Vector3.new(739.469, 70.574, -408.801)
-	end
-
-	-- 2. Move to staging guard area
+	if not stagingTarget or not target or not swapStealHumanoid() then return false, nil end
+	local root, stagingPosition = getRoot(), EggController.GetEggPosition(stagingTarget.Egg)
+	if not root or not stagingPosition then return false, nil end
+	local ragdollWatcher = startStagingRagdollWatcher(EggController.Config.StealEggNewPreTeleportDelay)
 	setState("MovingToStagingEgg")
-	log("StealEgg New: moving to staging area for guard aggro")
-	local pathToStaging = buildStealPath(root.Position, stagingPosition)
-	if not tweenAlong(pathToStaging) then
+	log("StealEgg New: tweening to " .. stagingTarget.Rarity .. " staging egg " .. stagingTarget.Name)
+	if not tweenAlong(buildStealPath(root.Position, stagingPosition)) then
+		ragdollWatcher.Cancelled = true
 		return false, nil
 	end
 	root = getRoot()
-	if root then
-		anchor(root, CFrame.new(stagingPosition.X, groundedY(stagingPosition.X, stagingPosition.Z, stagingPosition.Y), stagingPosition.Z))
-	end
-
-	-- 3. Trigger guard strike & watch for hit ("ให้สัตว์มันตี")
+	if root then anchor(root, CFrame.new(stagingPosition.X, groundedY(stagingPosition.X, stagingPosition.Z, stagingPosition.Y), stagingPosition.Z)) end
 	setState("StealingStagingEgg")
-	local ragdollWatcher = startStagingRagdollWatcher(EggController.Config.StealEggNewPreTeleportDelay or 3)
-	if stagingTarget and stagingTarget.Uid then
-		pcall(function() EggState.CarryFieldEgg(stagingTarget.Uid) end)
-	end
-
-	local hitDeadline = tick() + math.max(1.5, tonumber(EggController.Config.StealEggNewPreTeleportDelay) or 2.5)
-	while tick() < hitDeadline and active() do
-		local hum = getHumanoid()
-		if hum and isRagdolled(hum) then
-			break
+	local settleDelay = nativeCarrySettleDelay()
+	stealDebug("staging-settle:" .. stagingTarget.Uid, "at staging egg; waiting " .. tostring(settleDelay) .. "s for native pickup/position replication", .5)
+	task.wait(settleDelay)
+	-- Do not start the delay merely because we reached the staging
+	-- egg. The game must first accept its pickup request.
+	local stagingPicked, stagingDeadline = false, tick() + 1.75
+	while tick() < stagingDeadline and active() do
+		if tryCarry(stagingTarget) or isFieldCarrying() then
+			local carryKind, carriedUid = waitForExactStagingCarry(stagingTarget)
+			if carryKind == "target" then
+				ragdollWatcher.Cancelled = true
+				return true, carriedUid
+			end
+			if carryKind == "staging" or isFieldCarrying(stagingTarget.Uid) or isFieldCarrying() then
+				stagingPicked = true
+				break
+			end
 		end
-		if ragdollWatcher and ragdollWatcher.Detected then
-			break
-		end
-		task.wait(0.05)
+		task.wait(.05)
 	end
-	if ragdollWatcher then ragdollWatcher.Cancelled = true end
-
-	-- 4. Warp directly to configured target egg ("แล้วเราวาปไปที่ใข่ที่เราจะเอา")
+	if not stagingPicked then
+		ragdollWatcher.Cancelled = true
+		warnLog("Staging pickup was not accepted; not teleporting to configured target")
+		return false, nil
+	end
+	waitForStagingRagdollWatcher(ragdollWatcher)
+	if not active() then return false, nil end
 	local targetPosition = EggController.GetEggPosition(target.Egg)
 	if not targetPosition then return false, nil end
 	local targetGround = groundedY(targetPosition.X, targetPosition.Z, targetPosition.Y)
 	local warpDestination = Vector3.new(targetPosition.X, targetGround, targetPosition.Z)
-
 	setState("TeleportingToConfiguredEgg")
-	log("StealEgg New: warped to target egg " .. target.Name)
+	log("StealEgg New: warping to target egg " .. target.Name)
 	if not rawTeleport(warpDestination) then
 		return false, nil
 	end
@@ -2452,20 +2392,22 @@ function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 		anchor(root, CFrame.new(warpDestination))
 	end
 
-	-- 5. At target egg: wait for knockdown recovery and pick up target ("แล้วหยิบใข่")
-	setState("StealingConfiguredEgg")
-	log("StealEgg New: picking up target egg " .. target.Name)
+	setState("RecoveringAtTargetEgg")
+	log("StealEgg New: waiting for ragdoll/knockdown recovery at target egg")
+	waitForRagdollRecovery(EggController.Config.StealEggNewRagdollRecoveryTimeout or 5)
+	local pickupDelay = math.max(3.0, tonumber(EggController.Config.StealEggNewPickupDelay) or 3.5)
+	if pickupDelay > 0 then task.wait(pickupDelay) end
+	local hum = getHumanoid()
+	if hum then forceClearRagdoll(hum) end
 
-	local carried, carriedUid = false, nil
-	local pickupDeadline = tick() + 8.0
-	while tick() < pickupDeadline and active() do
+	setState("StealingConfiguredEgg")
+	local carried, carriedUid, untilTime = false, nil, tick() + 8.0
+	while tick() < untilTime and active() do
 		local currentHum = getHumanoid()
 		if currentHum then
 			forceClearRagdoll(currentHum)
 		end
-
 		tryCarry(target)
-
 		if isFieldCarrying(target.Uid) then
 			carried, carriedUid = true, target.Uid
 			break
@@ -2475,9 +2417,8 @@ function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 			carried, carriedUid = true, held.Uid
 			break
 		end
-		task.wait(0.2)
+		task.wait(.25)
 	end
-
 	return carried, carried and (carriedUid or target.Uid) or nil
 end
 
@@ -2530,7 +2471,7 @@ function EggController.ReturnToBaseWithEgg(uid)
 		end
 	end
 	task.wait(EggController.CORRIDOR_STEP_DELAY)
-	return characterEpoch == tripEpoch and (isFieldCarrying(uid) or isInsidePetArea() or atOwnPlot())
+	return characterEpoch == tripEpoch and isFieldCarrying(uid)
 end
 local function atOwnPlot()
 	local root = getRoot()
@@ -4177,10 +4118,11 @@ function EggController.HandleIdleTreadmill()
 			local limit = math.max(1, tonumber(EggController.Config.TreadmillSpeedFailureLimit) or 10)
 			if treadmillSpeedFailureCount >= limit then
 				clearTreadmillWearForRetry()
-				nextTreadmillCheckAt = os.clock() + 5
-				treadmillSpeedFailureCount = 0
+				nextTreadmillCheckAt = os.clock() + 1
 				if EggController.Config.TreadmillHopOnSpeedFailure then
 					hopServerForTreadmillFailure()
+				else
+					warnLog("Treadmill SpeedPower did not increase after " .. tostring(limit) .. " checks")
 				end
 			else
 				nextTreadmillCheckAt = os.clock() + checkSeconds
@@ -4197,10 +4139,13 @@ function EggController.ExecuteStealCycle(target, stagingTarget)
 	EggController.TargetName, EggController.TargetRarity = target.Name, target.Rarity
 	local carried, carryUid = false, nil
 	if EggController.Config.UseStealEggNew then
+		if not stagingTarget then
+			warnLog("Staging egg unavailable; direct target movement is disabled")
+			return false
+		end
 		carried, carryUid = EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 		if not carried then
-			warnLog("Bypass TP steal cycle failed for target: " .. tostring(target.Name))
-			FailedEggCooldowns[target.Uid] = os.clock() + 4
+			warnLog("Staging cycle failed; direct target fallback is disabled")
 			return false
 		end
 	else
@@ -4532,8 +4477,7 @@ local httpRequest = (syn and syn.request)
 	or http_request
 	or request
 	or (fluxus and fluxus.request)
-	or (delta and delta.request)
-	or (env and (env.request or env.http_request or (env.delta and env.delta.request)))
+	or (env and (env.request or env.http_request))
 
 if type(httpRequest) ~= "function" then
 	warn("[XyraxStealEgg] [Monitor] disabled: this executor exposes no HTTP request function")
