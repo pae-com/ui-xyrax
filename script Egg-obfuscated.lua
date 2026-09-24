@@ -2285,10 +2285,25 @@ local function startStagingRagdollWatcher(timeout)
 	}
 	local deadline = tick() + math.max(0, tonumber(timeout) or 60)
 	task.spawn(function()
+		local initialHum = getHumanoid()
+		local initialHealth = initialHum and initialHum.Health or 100
 		while tick() < deadline and active() and not watcher.Cancelled do
 			local humanoid = getHumanoid()
-			if humanoid and isRagdolled(humanoid) then
-				watcher.StateName = humanoid:GetState().Name
+			local root = getRoot()
+			if humanoid then
+				if isRagdolled(humanoid) then
+					watcher.StateName = humanoid:GetState().Name
+					watcher.Detected = true
+					return
+				end
+				if humanoid.Health < initialHealth then
+					watcher.StateName = "DamagedByGuard"
+					watcher.Detected = true
+					return
+				end
+			end
+			if root and root.AssemblyLinearVelocity.Magnitude > 15 then
+				watcher.StateName = "GuardKnockback"
 				watcher.Detected = true
 				return
 			end
@@ -2340,11 +2355,9 @@ function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 	if not stagingTarget or not target or not swapStealHumanoid() then return false, nil end
 	local root, stagingPosition = getRoot(), EggController.GetEggPosition(stagingTarget.Egg)
 	if not root or not stagingPosition then return false, nil end
-	local ragdollWatcher = startStagingRagdollWatcher(EggController.Config.StealEggNewPreTeleportDelay)
 	setState("MovingToStagingEgg")
 	log("StealEgg New: tweening to " .. stagingTarget.Rarity .. " staging egg " .. stagingTarget.Name)
 	if not tweenAlong(buildStealPath(root.Position, stagingPosition)) then
-		ragdollWatcher.Cancelled = true
 		return false, nil
 	end
 	root = getRoot()
@@ -2360,7 +2373,6 @@ function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 		if tryCarry(stagingTarget) or isFieldCarrying() then
 			local carryKind, carriedUid = waitForExactStagingCarry(stagingTarget)
 			if carryKind == "target" then
-				ragdollWatcher.Cancelled = true
 				return true, carriedUid
 			end
 			if carryKind == "staging" or isFieldCarrying(stagingTarget.Uid) or isFieldCarrying() then
@@ -2371,25 +2383,64 @@ function EggController.StealEggNewStagingThenTarget(stagingTarget, target)
 		task.wait(.05)
 	end
 	if not stagingPicked then
-		ragdollWatcher.Cancelled = true
 		warnLog("Staging pickup was not accepted; not teleporting to configured target")
 		return false, nil
 	end
+	local waitTimeout = math.max(3, tonumber(EggController.Config.StealEggNewPreTeleportDelay) or 4)
+	local ragdollWatcher = startStagingRagdollWatcher(waitTimeout)
 	waitForStagingRagdollWatcher(ragdollWatcher)
 	if not active() then return false, nil end
 	local targetPosition = EggController.GetEggPosition(target.Egg)
-	if not targetPosition then return false, nil end
-	local targetGround = groundedY(targetPosition.X, targetPosition.Z, targetPosition.Y)
-	local warpDestination = Vector3.new(targetPosition.X, targetGround, targetPosition.Z)
-	setState("TeleportingToConfiguredEgg")
-	log("StealEgg New: warping to target egg " .. target.Name)
-	if not rawTeleport(warpDestination) then
+	if not targetPosition then
+		target = getStealEggNewConfiguredTarget(stagingTarget and stagingTarget.Uid)
+		targetPosition = target and EggController.GetEggPosition(target.Egg)
+	end
+	if not targetPosition then
+		warnLog("StealEgg New: target egg position unavailable; cannot warp")
 		return false, nil
 	end
 
+	local targetY = targetPosition.Y + 2
+	local warpDestination = Vector3.new(targetPosition.X, targetY, targetPosition.Z)
+	setState("TeleportingToConfiguredEgg")
+	log("StealEgg New: warping to target egg " .. tostring(target.Name))
+
+	local character = LocalPlayer.Character
+	local humanoid = getHumanoid()
 	root = getRoot()
+
+	if humanoid then
+		humanoid.PlatformStand = false
+		humanoid.Sit = false
+		humanoid.AutoRotate = true
+		pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+	end
+
+	if character then
+		for _, desc in ipairs(character:GetDescendants()) do
+			if desc:IsA("BodyMover") or desc:IsA("LinearVelocity") or desc:IsA("VectorForce") then
+				pcall(function() desc:Destroy() end)
+			end
+		end
+	end
+
 	if root then
-		anchor(root, CFrame.new(warpDestination))
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		root.Anchored = true
+		if character and character.PrimaryPart then
+			character:PivotTo(CFrame.new(warpDestination))
+		end
+		root.CFrame = CFrame.new(warpDestination)
+		task.wait(0.06)
+		if character and character.PrimaryPart then
+			character:PivotTo(CFrame.new(warpDestination))
+		end
+		root.CFrame = CFrame.new(warpDestination)
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		task.wait(0.06)
+		root.Anchored = false
 	end
 
 	setState("RecoveringAtTargetEgg")
