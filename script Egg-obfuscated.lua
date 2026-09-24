@@ -262,7 +262,7 @@ EggController.Config = {
 	-- Verify real replicated SpeedPower rather than the treadmill HUD/belt event.
 	TreadmillSpeedCheckSeconds = 5,
 	TreadmillSpeedFailureLimit = 10,
-	TreadmillHopOnSpeedFailure = true,
+	TreadmillHopOnSpeedFailure = false,
 	-- A teleport request can be accepted locally but later fail with Roblox 772
 	-- (the destination filled up). Keep selecting another public server until one
 	-- actually accepts the transfer.
@@ -1941,6 +1941,7 @@ local function resetTreadmillSpeedMonitor()
 end
 
 local function hopServerForTreadmillFailure()
+	if not EggController.Config.TreadmillHopOnSpeedFailure then return false end
 	if treadmillHopRequested then return true end
 	treadmillHopRequested = true
 	log("Treadmill SpeedPower did not increase after " .. tostring(EggController.Config.TreadmillSpeedFailureLimit or 10) .. " checks; finding a new server")
@@ -4176,11 +4177,10 @@ function EggController.HandleIdleTreadmill()
 			local limit = math.max(1, tonumber(EggController.Config.TreadmillSpeedFailureLimit) or 10)
 			if treadmillSpeedFailureCount >= limit then
 				clearTreadmillWearForRetry()
-				nextTreadmillCheckAt = os.clock() + 1
+				nextTreadmillCheckAt = os.clock() + 5
+				treadmillSpeedFailureCount = 0
 				if EggController.Config.TreadmillHopOnSpeedFailure then
 					hopServerForTreadmillFailure()
-				else
-					warnLog("Treadmill SpeedPower did not increase after " .. tostring(limit) .. " checks")
 				end
 			else
 				nextTreadmillCheckAt = os.clock() + checkSeconds
